@@ -1,0 +1,40 @@
+.svgicon {
+  width: 24px;
+  height: 24px;
+}
+
+.forcescroll {
+  overflow-x: scroll;
+}
+
+body {
+  max-width: 1000px;
+  min-width: 1000px;
+}
+
+.ui-section-header {
+  font-weight: bolder;
+  font-size: large;
+  background-color: #ccc;
+  margin: 0px;
+}
+.ui-section-body {
+  color: #00f;
+}
+
+.ui-section {
+  /* border-bottom: #555 3px solid;  */
+  margin-bottom: 3px;
+  border-top: #555 3px solid; 
+
+  margin: 0px;
+}
+
+
+.text-form-input {
+  width: 400px;
+}
+
+.text-form-pass {
+  width: 370px;
+}
