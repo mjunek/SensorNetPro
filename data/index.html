@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+
+<head>
+    <title>SensorNetPro</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="datatables.min.css">
+    <link rel="stylesheet" type="text/css" href="sensorNetPro.css">
+    <script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="datatables.min.js"></script>
+</head>
+
+<body class="">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svgicons"
+        style="display: none;">
+        <symbol id="ico_error" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
+            <path d="M0 0h24v24H0V0z" fill="none" />
+            <path
+                d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+        </symbol>
+        <symbol id="ico_wifi_off" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
+            <path d="M24 .01c0-.01 0-.01 0 0L0 0v24h24V.01zM0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none" />
+            <path
+                d="M22.99 9C19.15 5.16 13.8 3.76 8.84 4.78l2.52 2.52c3.47-.17 6.99 1.05 9.63 3.7l2-2zm-4 4c-1.29-1.29-2.84-2.13-4.49-2.56l3.53 3.53.96-.97zM2 3.05L5.07 6.1C3.6 6.82 2.22 7.78 1 9l1.99 2c1.24-1.24 2.67-2.16 4.2-2.77l2.24 2.24C7.81 10.89 6.27 11.73 5 13v.01L6.99 15c1.36-1.36 3.14-2.04 4.92-2.06L18.98 20l1.27-1.26L3.29 1.79 2 3.05zM9 17l3 3 3-3c-1.65-1.66-4.34-1.66-6 0z" />
+        </symbol>
+        <symbol id="ico_wifi_status" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
+            <path d="M0 0h24v24H0z" fill="none" />
+            <path
+                d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" />
+        </symbol>
+        <symbol id="ico_ap_status" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
+            <path d="M0 0h24v24H0z" fill="none" />
+            <path
+                d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 2c0-3.31-2.69-6-6-6s-6 2.69-6 6c0 2.22 1.21 4.15 3 5.19l1-1.74c-1.19-.7-2-1.97-2-3.45 0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.48-.81 2.75-2 3.45l1 1.74c1.79-1.04 3-2.97 3-5.19zM12 3C6.48 3 2 7.48 2 13c0 3.7 2.01 6.92 4.99 8.65l1-1.73C5.61 18.53 4 15.96 4 13c0-4.42 3.58-8 8-8s8 3.58 8 8c0 2.96-1.61 5.53-4 6.92l1 1.73c2.99-1.73 5-4.95 5-8.65 0-5.52-4.48-10-10-10z" />
+        </symbol>
+        <symbol id="ico_eth" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
+            fill="currentColor">
+            <g>
+                <rect fill="none" height="24" width="24" />
+            </g>
+            <g>
+                <polygon
+                    points="13,22 21,22 21,15 18,15 18,11 13,11 13,9 16,9 16,2 8,2 8,9 11,9 11,11 6,11 6,15 3,15 3,22 11,22 11,15 8,15 8,13 16,13 16,15 13,15" />
+            </g>
+        </symbol>
+        <symbol id="ico_user_tab" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
+            fill="currentColor">
+            <g>
+                <rect fill="none" height="24" width="24" />
+            </g>
+            <g>
+                <g>
+                    <path
+                        d="M17,11c0.34,0,0.67,0.04,1,0.09V6.27L10.5,3L3,6.27v4.91c0,4.54,3.2,8.79,7.5,9.82c0.55-0.13,1.08-0.32,1.6-0.55 C11.41,19.47,11,18.28,11,17C11,13.69,13.69,11,17,11z" />
+                    <path
+                        d="M17,13c-2.21,0-4,1.79-4,4c0,2.21,1.79,4,4,4s4-1.79,4-4C21,14.79,19.21,13,17,13z M17,14.38c0.62,0,1.12,0.51,1.12,1.12 s-0.51,1.12-1.12,1.12s-1.12-0.51-1.12-1.12S16.38,14.38,17,14.38z M17,19.75c-0.93,0-1.74-0.46-2.24-1.17 c0.05-0.72,1.51-1.08,2.24-1.08s2.19,0.36,2.24,1.08C18.74,19.29,17.93,19.75,17,19.75z" />
+                </g>
+            </g>
+        </symbol>
+        <symbol id="ico_sensor_tab" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
+            fill="currentColor">
+            <g>
+                <path d="M0,0h24v24H0V0z" fill="none" />
+            </g>
+            <g>
+                <path
+                    d="M15,13V5c0-1.66-1.34-3-3-3S9,3.34,9,5v8c-1.21,0.91-2,2.37-2,4c0,2.76,2.24,5,5,5s5-2.24,5-5C17,15.37,16.21,13.91,15,13z M11,11V5c0-0.55,0.45-1,1-1s1,0.45,1,1v1h-1v1h1v1v1h-1v1h1v1H11z" />
+            </g>
+        </symbol>
+        <symbol id="ico_info_tab" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
+            fill="currentColor">
+            <g>
+                <path d="M0,0h24v24H0V0z" fill="none" />
+                <path
+                    d="M11,7h2v2h-2V7z M11,11h2v6h-2V11z M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20 c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z" />
+            </g>
+        </symbol>
+        <symbol id="ico_network_tab" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor">
+            <path d="M0 0h24v24H0z" fill="none" />
+            <path
+                d="M7.77 6.76L6.23 5.48.82 12l5.41 6.52 1.54-1.28L3.42 12l4.35-5.24zM7 13h2v-2H7v2zm10-2h-2v2h2v-2zm-6 2h2v-2h-2v2zm6.77-7.52l-1.54 1.28L20.58 12l-4.35 5.24 1.54 1.28L23.18 12l-5.41-6.52z" />
+        </symbol>
+        <symbol id="ico_snmp_tab" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
+            fill="currentColor">
+            <rect fill="none" height="24" width="24" />
+            <g>
+                <path
+                    d="M19.88,18.47c0.44-0.7,0.7-1.51,0.7-2.39c0-2.49-2.01-4.5-4.5-4.5s-4.5,2.01-4.5,4.5s2.01,4.5,4.49,4.5 c0.88,0,1.7-0.26,2.39-0.7L21.58,23L23,21.58L19.88,18.47z M16.08,18.58c-1.38,0-2.5-1.12-2.5-2.5c0-1.38,1.12-2.5,2.5-2.5 s2.5,1.12,2.5,2.5C18.58,17.46,17.46,18.58,16.08,18.58z M15.72,10.08c-0.74,0.02-1.45,0.18-2.1,0.45l-0.55-0.83l-3.8,6.18 l-3.01-3.52l-3.63,5.81L1,17l5-8l3,3.5L13,6C13,6,15.72,10.08,15.72,10.08z M18.31,10.58c-0.64-0.28-1.33-0.45-2.05-0.49 c0,0,5.12-8.09,5.12-8.09L23,3.18L18.31,10.58z" />
+            </g>
+        </symbol>
+        <symbol id="ico_yes" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+            <path
+                d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
+        </symbol>
+        <symbol id="ico_no" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+            <path
+                d="m336-280 144-144 144 144 56-56-144-144 144-144-56-56-144 144-144-144-56 56 144 144-144 144 56 56ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
+        </symbol>
+        <symbol id="ico_reset" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+            <path
+                d="m653-208-88 88-85-85 88-88q-4-11-6-23t-2-24q0-58 41-99t99-41q18 0 35 4.5t32 12.5l-95 95 56 56 95-94q8 15 12.5 31.5T840-340q0 58-41 99t-99 41q-13 0-24.5-2t-22.5-6Zm178-352h-83q-26-88-99-144t-169-56q-117 0-198.5 81.5T200-480q0 72 32.5 132t87.5 98v-110h80v240H160v-80h94q-62-50-98-122.5T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q129 0 226.5 79.5T831-560Z" />
+        </symbol>
+    </svg>
+    <div class="m-4">
+        <div class="row">
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <span class="pl-2 pr-4 ml-1 mr-4"><img alt="SensorNetPro Logo" src="logo.png" /></span>
+                <button id="btnNavInfo" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
+                    onclick="showSection('info')"><svg class="svgicon">
+                        <use xlink:href="#ico_info_tab"></use>
+                    </svg> Status</button>
+                <button id="btnNavSensors" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
+                    onclick="showSection('sensor')"><svg class="svgicon">
+                        <use xlink:href="#ico_sensor_tab"></use>
+                    </svg> Sensors</button>
+                <button id="btnNavSnmp" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
+                    onclick="showSection('snmp')"><svg class="svgicon">
+                        <use xlink:href="#ico_snmp_tab"></use>
+                    </svg> SNMP</button>
+                <button id="btnNavNetwork" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
+                    onclick="showSection('network')"><svg class="svgicon">
+                        <use xlink:href="#ico_network_tab"></use>
+                    </svg> Network</button>
+                <button id="btnNavAdmin" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
+                    onclick="showSection('admin')"><svg class="svgicon">
+                        <use xlink:href="#ico_user_tab"></use>
+                    </svg> Admin</button>
+            </nav>
+        </div>
+        <div class="row px-3" id="jsError" style="display: none;">
+            <div class="col-12 alert alert-danger fade show" role="alert"><span id="jsErrorText"></span>
+                <button type="button" class="close" onclick="$('#jsError').hide();">&times;</button>
+            </div>
+        </div>
+        <div class="row pb-3">
+            <div id="rebootRequired" class="col-12 text-center text-danger pt-3" style="display: none;">
+                A reboot is required for changes to take effect. <button id="btnReboot"
+                    class="btn btn-sm btn-outline-danger" onclick="rebootUnit()"><svg class="svgicon">
+                        <use xlink:href="#ico_reset"></use>
+                    </svg> Reboot</button>
+            </div>
+        </div>
+        <div id="infoPanel" class="my-3" style="display: none;">
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Sensor Status</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-bordered table-striped table-sm" id="sensorTable">
+                            <thead>
+                                <tr>
+                                    <th>Sensor ID</th>
+                                    <th>Sensor Address</th>
+                                    <th>Sensor Name</th>
+                                    <th>Reading</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            <div class="ui-section">
+
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Network Status</div>
+                </div>
+                <div class="row ui-section-body">
+                    <table class="table table-sm status-table">
+                        <tbody>
+                            <tr>
+                                <td width="50%" class="status-table-header text-right">Hostname</td>
+                                <td class="status-table-data"><span id="hostname_status_text"></span></td>
+                            </tr>
+                            <tr>
+                                <td width="50%" class="status-table-header text-right">DHCP</td>
+                                <td class="status-table-data"><svg class="svgicon text-muted" id="dhcp_icon">
+                                        <use xlink:href="#ico_yes"></use>
+                                    </svg> <span id="dhcp_text">Unknown</span></td>
+                            </tr>
+                            <tr>
+                                <td width="50%" class="status-table-header text-right">Ethernet</td>
+                                <td class="status-table-data"><svg class="svgicon text-muted" id="eth_status_icon">
+                                        <use xlink:href="#ico_eth"></use>
+                                    </svg> <span class="data-header text-muted" id="eth_status_text">Unknown</span></td>
+                            </tr>
+                            <tr>
+                                <td width="50%" class="status-table-header text-right">Wi-Fi</td>
+                                <td class="status-table-data"><svg class="svgicon text-muted" id="wifi_status_icon">
+                                        <use xlink:href="#ico_wifi_status"></use>
+                                    </svg> <span id="wifi_status_text" class="data-header text-muted">Unknown</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">System Status</div>
+                </div>
+                <div class="row ui-section-body">
+                    <table class="table table-sm status-table">
+                        <tbody>
+                            <tr>
+                                <td width="50%" class="status-table-header text-right">Firmware Version</td>
+                                <td class="status-table-data"><span id="version_text"></span></td>
+                            </tr>
+                            <tr>
+                                <td width="50%" class="status-table-header text-right">System Uptime</td>
+                                <td class="status-table-data"><span id="uptime_text"></span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="sensorPanel" class="my-3" style="display: none;">
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Sensor Configuration</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-bordered table-striped table-sm" id="sensorConfigTable">
+                            <thead>
+                                <tr>
+                                    <th>Sensor ID</th>
+                                    <th>Sensor Serial</th>
+                                    <th>Sensor Name</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12 text-center">
+                        <button id="btnSensorSave" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('sensor')">Save</button> <button id="btnSensorReset"
+                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
+                            onclick="resetSection('sensor')">Reset</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="snmpPanel" class="my-3" style="display: none;">
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">SNMP Configuration</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-sm status-table">
+                            <tbody>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="snmpCommunity"
+                                            class="col-form-label">Community String</label></td>
+                                    <td class="form-row status-table-data">
+                                        <input class="form-check-inline ml-2" type="checkbox" name="modifyCommunity"
+                                            id="modifyCommunity" onChange="setModifyCommunity(this)">
+                                        <input id="snmpCommunity" name="snmpCommuntiy"
+                                            class="form-control text-form-pass" placeholder="Enter new SNMP community"
+                                            maxlength="25" type="password" disabled>
+
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="snmpLocation"
+                                            class="col-form-label">Location</label></td>
+                                    <td class="status-table-data"><input id="snmpLocation" name="snmpLocation"
+                                            maxlength="25" type="text"
+                                            class="form-control text-form-input"></td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="snmpSysName"
+                                            class="col-form-label">System Name</label></td>
+                                    <td class="status-table-data"><input id="snmpSysName" name="snmpSysName"
+                                            maxlength="25" type="text"
+                                            class="form-control text-form-input"></td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="snmpContact"
+                                            class="col-form-label">Contact</label></td>
+                                    <td class="status-table-data"><input id="snmpContact" name="snmpContact"
+                                            maxlength="25" type="text"
+                                            class="form-control text-form-input"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12 text-center">
+                        <button id="btnSnmpSave" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('snmp')">Save</button> <button id="btnSnmpReset"
+                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
+                            onclick="resetSection('snmp')">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="networkPanel" class="my-3" style="display: none;">
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Hostname</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-sm status-table">
+                            <tbody>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkHostname"
+                                            class="col-form-label">Host Name</label></td>
+                                    <td class="status-table-data"><input id="networkHostname" name="networkHostname"
+                                            maxlength="25" onchange="validate('network')" type="text"
+                                            class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkHostnameValidateError">Invalid Hostname
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Wi-Fi Configuration</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-sm status-table">
+                            <tbody>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label
+                                            class="col-form-label">Wi-Fi Enabled</label></td>
+                                    <td class="status-table-data">
+                                        <div class="form-check form-check-inline col-form-label">
+                                            <input class="form-check-input" type="radio" name="networkWifi"
+                                                id="networkWifiYes" value="1" onChange="setWifiStatus(true)" checked>
+                                            <label class="form-check-label" for="networkWifiYes">Enabled</label>
+                                        </div>
+                                        <div class="form-check form-check-inline col-form-label">
+                                            <input class="form-check-input" type="radio" name="networkWifi"
+                                                id="networkWifiNo" value="0" onChange="setWifiStatus(false)">
+                                            <label class="form-check-label" for="networkWifiNo">Disabled</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label
+                                            class="col-form-label">Wi-Fi Mode</label></td>
+                                    <td class="status-table-data">
+                                        <div class="form-check form-check-inline col-form-label">
+                                            <input class="form-check-input" type="radio" name="networkWifiMode"
+                                                id="networkWifiModeAP" value="1" onchange="validate('network')" checked>
+                                            <label class="form-check-label" for="networkWifiModeAP">Access Point</label>
+                                        </div>
+                                        <div class="form-check form-check-inline col-form-label">
+                                            <input class="form-check-input" type="radio" name="networkWifiMode"
+                                                id="networkWifiModeSta" value="0" onchange="validate('network')">
+                                            <label class="form-check-label" for="networkWifiModeSta">Station</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkSSID"
+                                            class="col-form-label">SSID</label></td>
+                                    <td class="status-table-data"><input id="networkSSID" name="networkSSID"
+                                            maxlength="25" onchange="validate('network')" 
+                                            type="text" class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkSSIDValidateError">Invalid SSID</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkWpaKey"
+                                            class="col-form-label">WPA Key</label></td>
+                                    <td class="form-row status-table-data">
+                                        <input class="form-check-inline ml-2" type="checkbox" name="modifyWpaKey"
+                                            id="modifyWpaKey" onChange="setModifyWpaKey(this)">
+                                        <input id="networkWpaKey" name="networkWpaKey" onchange="validate('network')"
+                                            maxlength="25" value="" type="password" class="form-control text-form-pass"
+                                            placeholder="Enter new WPA key" disabled>
+                                        <div class="valid-feedback" id="networkWpaKeyValidateSuccess"></div>
+                                        <div class="invalid-feedback" id="networkWpaKeyValidateError">Invalid WPA Key
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-section">
+
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">TCP/IP Configuration</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-sm status-table">
+                            <tbody>
+
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label
+                                            class="col-form-label">DHCP Enabled</label></td>
+                                    <td class="status-table-data form-check">
+                                        <div class="form-check form-check-inline col-form-label">
+                                            <input class="form-check-input" type="radio" name="networkDHCP"
+                                                id="networkDHCPYes" value="1" onChange="setDhcpStatus(true)" checked>
+                                            <label class="form-check-label" for="networkDHCPYes">Enabled</label>
+                                        </div>
+                                        <div class="form-check form-check-inline col-form-label">
+                                            <input class="form-check-input" type="radio" name="networkDHCP"
+                                                id="networkDHCPNo" value="0" onChange="setDhcpStatus(false)">
+                                            <label class="form-check-label" for="networkDHCPNo">Disabled</label>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkIP"
+                                            class="col-form-label">IP Address</label></td>
+                                    <td class="status-table-data"><input id="networkIP" name="networkIP" maxlength="15"
+                                            onchange="validate('network')" type="text"
+                                            class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkIPValidateError">Invalid IP Address
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkMask"
+                                            class="col-form-label">Subnet Mask</label></td>
+                                    <td class="status-table-data"><input id="networkMask" name="networkMask"
+                                            maxlength="15" onchange="validate('network')" 
+                                            type="text" class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkMaskValidateError">Invalid Subnet Mask
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkGateway"
+                                            class="col-form-label">Default Gateway</label></td>
+                                    <td class="status-table-data"><input id="networkGateway" name="networkGateway"
+                                            onchange="validate('network')" maxlength="15" 
+                                            type="text" class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkGatewayValidateError">Invalid Gateway
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkPriDNS"
+                                            class="col-form-label">Primary DNS</label></td>
+                                    <td class="status-table-data"><input id="networkPriDNS" name="networkPriDNS"
+                                            onchange="validate('network')" maxlength="15" type="text"
+                                            class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkPriDNSValidateError">Invalid address
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="networkSecDNS"
+                                            class="col-form-label">Secondary DNS</label></td>
+                                    <td class="status-table-data"><input id="networkSecDNS" name="networkSecDNS"
+                                            onchange="validate('network')" maxlength="15" type="text"
+                                            class="form-control text-form-input">
+                                        <div class="invalid-feedback" id="networkSecDNSValidateError">Invalid address
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row ui-section-body">
+                    <div class="col-12 text-center">
+                        <button id="btnNetworkSave" class="btn btn-outline-success px-2 mx-1 py-1" type="button"
+                            onclick="saveSection('network')">Save</button> <button id="btnNetworkReset"
+                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
+                            onclick="resetSection('network')">Reset</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="adminPanel" class="my-3" style="display: none;">
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Admin User</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12">
+                        <table class="table table-sm status-table">
+                            <tbody>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="adminUser"
+                                            class="col-form-label">User Name</label></td>
+                                    <td class="status-table-data"><input id="adminUser" name="adminUser" maxlength="25"
+                                             type="text" class="form-control text-form-input"
+                                            onchange="validate('admin')"></td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" class="status-table-header text-right"><label for="adminPassword"
+                                            class="col-form-label">Password</label></td>
+                                    <td class="form-row status-table-data">
+                                        <input class="form-check-inline ml-2" type="checkbox" name="modifyAdminPass"
+                                            id="modifyAdminPass" onChange="setModifyAdminPass(this)">
+                                        <input id="adminPassword" name="adminPassword" onchange="validate('admin')"
+                                            maxlength="25" type="password" disabled placeholder="Enter new password"
+                                            class="form-control text-form-pass">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12 text-center mb-3">
+                        <button id="btnAdminSave" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('admin')">Save</button> <button id="btnAdminReset"
+                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
+                            onclick="resetSection('admin')">Reset</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Configuration Reset</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12 text-center mt-2">
+                        <button id="btnAdminFactoryDefault" class="btn btn-outline-danger px-2 mx-1 py-1"
+                            onclick="factoryReset()">Reset to Factory Defaults</button> <button
+                            id="btnClearSensorConfig" class="btn btn-outline-danger px-2 mx-1 py-1"
+                            onclick="clearSensorConfig()">Clear Sensor Configuration</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="sensorNetPro.js"></script>
+</body>
+
+</html>
