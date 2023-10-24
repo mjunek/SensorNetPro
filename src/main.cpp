@@ -25,6 +25,7 @@
 #include <ESPAsyncWebServer.h> // WebServer
 #include <AsyncJson.h>         // JSON Support for WebServer
 #include <ArduinoJson.h>       // JSON Support for Program
+#include <ESPmDNS.h>           // MDNS Responder
 
 #include "ethsettings.h" // Ethernet settings
 #include "prefs.h"       // Preferences Lib
@@ -46,51 +47,53 @@ DallasTemperature sensors(&oneWire);
 DeviceAddress *sensorsUnique;
 AsyncWebServer server(80);
 
-void loadPreferences()
+void loadPreferences(bool bypassInit)
 {
   Serial.println("Loading Preferences");
-  initPreferences();
-  isConfigured = getConfigured();
-
-  delay(200);
-  if (digitalRead(KEY_RESET) == 0)
+  if (!bypassInit)
   {
-    digitalWrite(STATUS_LED, 0);
-    digitalWrite(ERROR_LED, 0);
-    Serial.println("Factory reset button held at startup. Resetting after 5 seconds");
-    bool reset = false;
-    bool done = false;
-    int count = 0;
-    while (!done)
+    initPreferences();
+    isConfigured = getConfigured();
+
+    delay(200);
+    if (digitalRead(KEY_RESET) == 0)
     {
-      if (digitalRead(KEY_RESET) != 0)
+      digitalWrite(STATUS_LED, 0);
+      digitalWrite(ERROR_LED, 0);
+      Serial.println("Factory reset button held at startup. Resetting after 5 seconds");
+      bool reset = false;
+      bool done = false;
+      int count = 0;
+      while (!done)
       {
-        done = true;
+        if (digitalRead(KEY_RESET) != 0)
+        {
+          done = true;
+        }
+        Serial.println("...keep holding button");
+        bool led = count % 2;
+        digitalWrite(STATUS_LED, led);
+        digitalWrite(ERROR_LED, led);
+        delay(500);
+        if (++count >= 10)
+        {
+          digitalWrite(STATUS_LED, 1);
+          digitalWrite(ERROR_LED, 1);
+          resetToDefaults(true);
+        }
       }
-      Serial.println("...keep holding button");
-      bool led = count % 2;
-      digitalWrite(STATUS_LED, led);
-      digitalWrite(ERROR_LED, led);
-      delay(500);
-      if (++count >= 10)
-      {
-        digitalWrite(STATUS_LED, 1);
-        digitalWrite(ERROR_LED, 1);
-        resetToDefaults(true);
-      }
+      Serial.println("Button was released. Not resetting");
+      digitalWrite(STATUS_LED, 1);
+      digitalWrite(ERROR_LED, 1);
     }
-    Serial.println("Button was released. Not resetting");
-    digitalWrite(STATUS_LED, 1);
-    digitalWrite(ERROR_LED, 1);
+    if (!isConfigured)
+    {
+      Serial.println("No configuration stored - performing hard reset");
+      digitalWrite(ERROR_LED, 1);
+      digitalWrite(STATUS_LED, 0);
+      resetToDefaults(true);
+    }
   }
-  if (!isConfigured)
-  {
-    Serial.println("No configuration stored - performing hard reset");
-    digitalWrite(ERROR_LED, 1);
-    digitalWrite(STATUS_LED, 0);
-    resetToDefaults(true);
-  }
-
   dhcp_on = getDhcpMode();
   ap_on = getApMode();
   getSnmpCommunity(ch_snmpCommunity);
@@ -552,7 +555,9 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
   writeHttpUser(adminUser);
 
   commitToPrefs(false);
+  loadPreferences(true);
   apiGetConfiguration(&jsonDoc, false, false, true);
+  serializeJson(jsonDoc, *responseString);
 }
 
 void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest)
@@ -602,13 +607,13 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
   writeSnmpLocation(snmpLocation);
 
   commitToPrefs(false);
-  getSnmpCommunity(ch_snmpSysContact);
-  getSnmpContact(ch_snmpSysContact);
-  getSnmpSysName(ch_snmpSysName);
-  getSnmpLocation(ch_snmpLocation);
-  completeSnmpSetup();
-  jsonDoc["restartRequired"] = true;
 
+  jsonDoc["restartRequired"] = true;
+  loadPreferences(true);
+  completeSnmpSetup();
+
+  apiGetConfiguration(&jsonDoc, false, true, false);
+  serializeJson(jsonDoc, *responseString);
   serializeJson(jsonDoc, *responseString);
 }
 
@@ -616,7 +621,8 @@ void apiSaveSensorConfiguration(String *responseString, JsonObject *jsonRequest)
 {
 }
 
-void apiFactoryReset(String *responseString, JsonObject *jsonRequest){
+void apiFactoryReset(String *responseString, JsonObject *jsonRequest)
+{
   DynamicJsonDocument jsonDoc(2048);
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
@@ -801,7 +807,7 @@ void setup()
     }
   }
 
-  loadPreferences();
+  loadPreferences(false);
 
   WiFi.onEvent(WiFiEvent);
   wifi_on = getWifiEnabled();
@@ -896,6 +902,8 @@ void setup()
   }
   completeSnmpSetup();
   initPortal();
+  MDNS.begin(ch_systemHostname);
+  MDNS.addService("http", "tcp", 80);
   digitalWrite(ERROR_LED, 0);
   digitalWrite(STATUS_LED, 1);
 }
@@ -904,7 +912,6 @@ void loop()
 {
   snmpAgentLoop();
   uptime = esp_timer_get_time() / 10000;
-  // portal.tick();
   if (prevPoll == 0 || prevPoll + (SENSOR_TIME * 100) <= uptime)
   {
     updateSensorData();
