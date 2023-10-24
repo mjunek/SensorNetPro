@@ -278,7 +278,13 @@
                                             id="modifyCommunity" onChange="setModifyCommunity(this)">
                                         <input id="snmpCommunity" name="snmpCommuntiy"
                                             class="form-control text-form-pass" placeholder="Enter new SNMP community"
-                                            maxlength="25" type="password" disabled>
+                                            maxlength="25" type="password" disabled onchange="validate('snmp')">
+                                        <input id="snmpCommunityConfirm" name="snmpCommunityConfirm"
+                                            class="form-control text-form-passconfirm"
+                                            placeholder="Confirm SNMP community" maxlength="25" type="password" disabled
+                                            onchange="validate('snmp')">
+                                        <div class="invalid-feedback" id="snmpCommunityValidateError">Invalid Community
+                                            String
 
                                     </td>
                                 </tr>
@@ -286,22 +292,19 @@
                                     <td width="50%" class="status-table-header text-right"><label for="snmpLocation"
                                             class="col-form-label">Location</label></td>
                                     <td class="status-table-data"><input id="snmpLocation" name="snmpLocation"
-                                            maxlength="25" type="text"
-                                            class="form-control text-form-input"></td>
+                                            maxlength="25" type="text" class="form-control text-form-input"></td>
                                 </tr>
                                 <tr>
                                     <td width="50%" class="status-table-header text-right"><label for="snmpSysName"
                                             class="col-form-label">System Name</label></td>
                                     <td class="status-table-data"><input id="snmpSysName" name="snmpSysName"
-                                            maxlength="25" type="text"
-                                            class="form-control text-form-input"></td>
+                                            maxlength="25" type="text" class="form-control text-form-input"></td>
                                 </tr>
                                 <tr>
                                     <td width="50%" class="status-table-header text-right"><label for="snmpContact"
                                             class="col-form-label">Contact</label></td>
                                     <td class="status-table-data"><input id="snmpContact" name="snmpContact"
-                                            maxlength="25" type="text"
-                                            class="form-control text-form-input"></td>
+                                            maxlength="25" type="text" class="form-control text-form-input"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -386,8 +389,8 @@
                                     <td width="50%" class="status-table-header text-right"><label for="networkSSID"
                                             class="col-form-label">SSID</label></td>
                                     <td class="status-table-data"><input id="networkSSID" name="networkSSID"
-                                            maxlength="25" onchange="validate('network')" 
-                                            type="text" class="form-control text-form-input">
+                                            maxlength="25" onchange="validate('network')" type="text"
+                                            class="form-control text-form-input">
                                         <div class="invalid-feedback" id="networkSSIDValidateError">Invalid SSID</div>
                                     </td>
                                 </tr>
@@ -452,8 +455,8 @@
                                     <td width="50%" class="status-table-header text-right"><label for="networkMask"
                                             class="col-form-label">Subnet Mask</label></td>
                                     <td class="status-table-data"><input id="networkMask" name="networkMask"
-                                            maxlength="15" onchange="validate('network')" 
-                                            type="text" class="form-control text-form-input">
+                                            maxlength="15" onchange="validate('network')" type="text"
+                                            class="form-control text-form-input">
                                         <div class="invalid-feedback" id="networkMaskValidateError">Invalid Subnet Mask
                                         </div>
                                     </td>
@@ -462,8 +465,8 @@
                                     <td width="50%" class="status-table-header text-right"><label for="networkGateway"
                                             class="col-form-label">Default Gateway</label></td>
                                     <td class="status-table-data"><input id="networkGateway" name="networkGateway"
-                                            onchange="validate('network')" maxlength="15" 
-                                            type="text" class="form-control text-form-input">
+                                            onchange="validate('network')" maxlength="15" type="text"
+                                            class="form-control text-form-input">
                                         <div class="invalid-feedback" id="networkGatewayValidateError">Invalid Gateway
                                         </div>
                                     </td>
@@ -519,7 +522,7 @@
                                     <td width="50%" class="status-table-header text-right"><label for="adminUser"
                                             class="col-form-label">User Name</label></td>
                                     <td class="status-table-data"><input id="adminUser" name="adminUser" maxlength="25"
-                                             type="text" class="form-control text-form-input"
+                                            type="text" class="form-control text-form-input"
                                             onchange="validate('admin')"></td>
                                 </tr>
                                 <tr>

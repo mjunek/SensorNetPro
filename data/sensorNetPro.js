@@ -2,9 +2,20 @@ let ajaxBase = "/json-api";
 let currentSection;
 let statusRefreshTimer;
 let config;
-const sectionFields = new Object;
+const sectionFields = new Object();
 sectionFields.admin = ["adminUser"];
-sectionFields.network = ["networkHostname", "networkWifiEnabled", "networkDhcpEnabled", "networkWifiApMode", "networkIP", "networkMask", "networkGateway", "networkPriDNS", "networkSecDNS", "networkSSID"];
+sectionFields.network = [
+  "networkHostname",
+  "networkWifiEnabled",
+  "networkDhcpEnabled",
+  "networkWifiApMode",
+  "networkIP",
+  "networkMask",
+  "networkGateway",
+  "networkPriDNS",
+  "networkSecDNS",
+  "networkSSID",
+];
 sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
 
 let sensorTable = $("#sensorTable").DataTable({
@@ -132,9 +143,9 @@ function updateSystemInfo() {
       $("#eth_status_text").text(
         responseData.ethStatus
           ? "Connected | IP: " +
-          responseData.ethIp +
-          " | Speed: " +
-          responseData.etherSpeed
+              responseData.ethIp +
+              " | Speed: " +
+              responseData.etherSpeed
           : "Disconnected"
       );
 
@@ -173,9 +184,9 @@ function updateSystemInfo() {
         $("#wifi_status_text").text(
           responseData.wifiStatus
             ? "Associated | IP: " +
-            responseData.wifiIp +
-            " | RSSI: " +
-            responseData.RSSI
+                responseData.wifiIp +
+                " | RSSI: " +
+                responseData.RSSI
             : "Not connected to AP"
         );
       }
@@ -215,6 +226,9 @@ function updateSystemInfo() {
         "There was an error refreshing the status information."
       );
       $("#jsError").show();
+      setTimeout(() => {
+        $("#jsError").hide();
+      }, 5000);
     },
   });
 }
@@ -264,28 +278,33 @@ function setWifiStatus(status) {
 }
 
 function saveSection(section) {
+  console.log("savesection", section);
   if (!validate(section)) return;
   let reqData = new Object();
-
 
   switch (section) {
     case "admin":
       reqData.webAction = "save-admin";
       reqData.adminUser = $("#adminUser").val();
       reqData.adminPassword = $("#adminPassword").val();
-      reqData.modifyAdminPass = ($("#modifyAdminPass").val() == "on");
+      reqData.modifyAdminPass = $("#modifyAdminPass").val() == "on";
       break;
     case "network":
       reqData.webAction = "save-network";
       break;
     case "snmp":
       reqData.webAction = "save-snmp";
+      reqData.snmpLocation = $("#snmpLocation").val();
+      reqData.snmpSysName = $("#snmpSysName ").val();
+      reqData.snmpContact = $("#snmpContact").val();
+      reqData.snmpCommunity = $("#snmpCommunity").val();
+      reqData.modifySnmpCommunity = $("#modifySnmpCommunity").val() == "on";
       break;
     case "sensor":
       reqData.webAction = "save-sensor";
       break;
   }
-
+  console.log("sending ajax req", reqData);
   $.ajax({
     url: ajaxBase,
     contentType: "application/json",
@@ -294,6 +313,7 @@ function saveSection(section) {
     timeout: 10000,
     data: JSON.stringify(reqData),
     success: function (responseData) {
+      console.log("success", responseData);
       if (responseData.error == false) {
         for (field in sectionFields[section]) {
           console.log("processing section field", section, field);
@@ -302,15 +322,23 @@ function saveSection(section) {
         // resetSection(section, true);
         $("#jsSuccessText").text("Configuration saved successfully.");
         $("#jsSuccess").show();
-
+        setTimeout(() => {
+          $("#jsSuccess").hide();
+        }, 5000);
       } else {
         $("#jsErrorText").text("There was an error saving the configuration.");
         $("#jsError").show();
+        setTimeout(() => {
+          $("#jsError").hide();
+        }, 5000);
       }
     },
     error: function (error) {
       $("#jsErrorText").text("There was an error saving the configuration.");
       $("#jsError").show();
+      setTimeout(() => {
+        $("#jsError").hide();
+      }, 5000);
     },
   });
 }
@@ -320,6 +348,7 @@ function validate(section) {
     case "admin":
       let adminUser = $("#adminUser").val();
       let adminPassword = $("#adminPassword").val();
+      let modifyAdminPass = $("#modifyAdminPass").val() == "on";
       if (adminUser == null || adminUser == "") {
         $("#adminUser").addClass("is-invalid").removeClass("is-valid");
         return false;
@@ -329,11 +358,12 @@ function validate(section) {
 
       if (
         !(adminPassword == null || adminPassword == "") &&
-        adminPassword.length < 8
+        adminPassword.length < 8 &&
+        modifyAdminPass
       ) {
         $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
         return false;
-      } else if (adminPassword == null || adminPassword == "") {
+      } else if (!modifyAdminPass) {
         $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
       } else {
         $("#adminPassword").removeClass("is-invalid").addClass("is-valid");
@@ -346,7 +376,53 @@ function validate(section) {
       return ipResult && wifiResult;
 
     case "snmp":
-      break;
+      let snmpSuccess=true;
+      let snmpCommunity = $("#snmpCommunity").val();
+      let snmpCommunityConfirm = $("#snmpCommunityConfirm").val();
+      let modifySnmpCommunity = $("#modifyCommunity").val() == "on";
+
+      if (
+        modifySnmpCommunity &&
+        (snmpCommunity == null || snmpCommunity == "")
+      ) {
+        $("#snmpCommunity").addClass("is-invalid").removeClass("is-valid");
+        $("#snmpCommunityValidateError").text(
+          "Community String must be supplied"
+        );
+        snmpSuccess= false;
+      } else if (!modifySnmpCommunity) {
+        $("#snmpCommunity").removeClass("is-invalid").removeClass("is-valid");
+        $("#snmpCommunityConfirm")
+          .removeClass("is-invalid")
+          .removeClass("is-valid");
+        $("#snmpCommunityValidateError").text("");
+      } else {
+
+        $("#snmpCommunity").removeClass("is-invalid").addClass("is-valid");
+
+        if (snmpCommunityConfirm == null || snmpCommunityConfirm == "") {
+          $("#snmpCommunityConfirm")
+            .addClass("is-invalid")
+            .removeClass("is-valid");
+          $("#snmpCommunityValidateError").text(
+            "Please confirm the Community String"
+          );
+          snmpSuccess= false;
+        } else if (snmpCommunityConfirm != snmpCommunity) {
+          $("#snmpCommunityConfirm")
+            .addClass("is-invalid")
+            .removeClass("is-valid");
+          $("#snmpCommunityValidateError").text(
+            "Community Strings do not match."
+          );
+          snmpSuccess= false;
+        } else {
+          $("#snmpCommunityConfirm")
+            .removeClass("is-invalid")
+            .addClass("is-valid");
+        }
+      }
+      return snmpSuccess;
     case "sensor":
       break;
   }
@@ -564,8 +640,7 @@ function validateWifiSettings() {
 
   if (!changeWpaKey) {
     $("#networkWpaKey").removeClass("is-invalid").removeClass("is-valid");
-  }
-  else if (wpakey == null || wpakey == "") {
+  } else if (wpakey == null || wpakey == "") {
     $("#networkWpaKeyValidateSuccess").text(
       "Notice: No Wi-Fi encryption will be enabled!"
     );
@@ -612,11 +687,9 @@ function resetSection(section, force) {
       $("#networkWifiModeAP").prop("checked", config.networkWifiApMode);
       $("#networkWifiModeSta").prop("checked", !config.networkWifiApMode);
 
-
       $("#networkDHCPYes").prop("checked", config.networkDhcpEnabled);
       $("#networkDHCPNo").prop("checked", !config.networkDhcpEnabled);
       setDhcpStatus(config.networkDhcpEnabled);
-
 
       $("#networkWifiYes").prop("checked", config.networkWifiEnabled);
       $("#networkWifiNo").prop("checked", !config.networkWifiEnabled);
@@ -642,7 +715,6 @@ function resetSection(section, force) {
       break;
     case "sensor":
       sensorConfigTable.ajax.reload();
-
   }
   validate(section);
 }
@@ -664,15 +736,20 @@ function getConfig() {
         resetSection("admin", true);
         resetSection("snmp", true);
         resetSection("network", true);
-
       } else {
         $("#jsErrorText").text("There was an error getting the configuration.");
         $("#jsError").show();
+        setTimeout(() => {
+          $("#jsError").hide();
+        }, 5000);
       }
     },
     error: function (error) {
       $("#jsErrorText").text("There was an error getting the configuration.");
       $("#jsError").show();
+      setTimeout(() => {
+        $("#jsError").hide();
+      }, 5000);
     },
   });
 }
@@ -697,12 +774,21 @@ function setModifyCommunity(checkbox) {
   if (!checkbox.checked) {
     $("#snmpCommunity").val("");
     $("#snmpCommunity").removeClass("is-invalid").removeClass("is-valid");
+    $("#snmpCommunityConfirm").val("");
+    $("#snmpCommunityConfirm")
+      .removeClass("is-invalid")
+      .removeClass("is-valid");
   }
   $("#snmpCommunity").prop("disabled", !checkbox.checked);
+  $("#snmpCommunityConfirm").prop("disabled", !checkbox.checked);
 }
 
 function factoryReset() {
-  if (confirm("Are you sure you wish to reset all settings to their factory defaults?")) {
+  if (
+    confirm(
+      "Are you sure you wish to reset all settings to their factory defaults?"
+    )
+  ) {
     let reqData = new Object();
     reqData.webAction = "factory-reset";
 
@@ -719,20 +805,34 @@ function factoryReset() {
             $("#rebootRequired").show();
           }
         } else {
-          $("#jsErrorText").text("There was an error resetting the configuration.");
+          $("#jsErrorText").text(
+            "There was an error resetting the configuration."
+          );
           $("#jsError").show();
+          setTimeout(() => {
+            $("#jsError").hide();
+          }, 5000);
         }
       },
       error: function (error) {
-        $("#jsErrorText").text("There was an error resetting the configuration.");
+        $("#jsErrorText").text(
+          "There was an error resetting the configuration."
+        );
         $("#jsError").show();
+        setTimeout(() => {
+          $("#jsError").hide();
+        }, 5000);
       },
     });
   }
 }
 
 function clearSensorConfig() {
-  if (confirm("Are you sure you wish to reset all sensor configuration? This may also reallocate SNMP index numbers")) {
+  if (
+    confirm(
+      "Are you sure you wish to reset all sensor configuration? This may also reallocate SNMP index numbers"
+    )
+  ) {
     let reqData = new Object();
     reqData.webAction = "reset-sensor-config";
 
@@ -749,13 +849,23 @@ function clearSensorConfig() {
             $("#rebootRequired").show();
           }
         } else {
-          $("#jsErrorText").text("There was an error resetting the sensor configuration.");
+          $("#jsErrorText").text(
+            "There was an error resetting the sensor configuration."
+          );
           $("#jsError").show();
+          setTimeout(() => {
+            $("#jsError").hide();
+          }, 5000);
         }
       },
       error: function (error) {
-        $("#jsErrorText").text("There was an error resetting the sensor configuration.");
+        $("#jsErrorText").text(
+          "There was an error resetting the sensor configuration."
+        );
         $("#jsError").show();
+        setTimeout(() => {
+          $("#jsError").hide();
+        }, 5000);
       },
     });
   }
