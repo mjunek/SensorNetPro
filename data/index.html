@@ -136,6 +136,11 @@
                 <button type="button" class="close" onclick="$('#jsError').hide();">&times;</button>
             </div>
         </div>
+        <div class="row px-3" id="jsSuccess" style="display: none;">
+            <div class="col-12 alert alert-success fade show" role="alert"><span id="jsSuccessText"></span>
+                <button type="button" class="close" onclick="$('#jsSuccess').hide();">&times;</button>
+            </div>
+        </div>
         <div class="row pb-3">
             <div id="rebootRequired" class="col-12 text-center text-danger pt-3" style="display: none;">
                 A reboot is required for changes to take effect. <button id="btnReboot"

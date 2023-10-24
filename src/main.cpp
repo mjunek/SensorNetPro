@@ -484,33 +484,39 @@ void apiSystemStats(String *responseString, JsonObject *jsonRequest)
   serializeJson(jsonDoc, *responseString);
 }
 
-void apiGetConfiguration(String *responseString, JsonObject *jsonRequest)
+void apiGetConfiguration(DynamicJsonDocument *jsonDoc, bool network, bool snmp, bool admin)
 {
-  DynamicJsonDocument jsonDoc(2048);
-  jsonDoc["error"] = false;
-  jsonDoc["errorMessage"] = "Success";
-  jsonDoc["networkHostname"] = ch_systemHostname;
-  jsonDoc["networkWifiEnabled"] = wifi_on;
-  jsonDoc["networkDhcpEnabled"] = dhcp_on;
-  jsonDoc["networkWifiApMode"] = ap_on;
-  jsonDoc["networkIP"] = getIPString(TYPE_ADDR);
-  jsonDoc["networkMask"] = getIPString(TYPE_MASK);
-  jsonDoc["networkGateway"] = getIPString(TYPE_GWAY);
-  jsonDoc["networkPriDNS"] = getIPString(TYPE_DNS1);
-  jsonDoc["networkSecDNS"] = getIPString(TYPE_DNS2);
-  jsonDoc["networkSSID"] = ch_wifiSSID;
-  jsonDoc["adminUser"] = ch_httpAdminUser;
-  jsonDoc["snmpLocation"] = ch_snmpLocation;
-  jsonDoc["snmpSysName"] = ch_snmpSysName;
-  jsonDoc["snmpContact"] = ch_snmpSysContact;
-
-  serializeJson(jsonDoc, *responseString);
+  (*jsonDoc)["error"] = false;
+  (*jsonDoc)["errorMessage"] = "Success";
+  if (network)
+  {
+    (*jsonDoc)["networkHostname"] = ch_systemHostname;
+    (*jsonDoc)["networkWifiEnabled"] = wifi_on;
+    (*jsonDoc)["networkDhcpEnabled"] = dhcp_on;
+    (*jsonDoc)["networkWifiApMode"] = ap_on;
+    (*jsonDoc)["networkIP"] = getIPString(TYPE_ADDR);
+    (*jsonDoc)["networkMask"] = getIPString(TYPE_MASK);
+    (*jsonDoc)["networkGateway"] = getIPString(TYPE_GWAY);
+    (*jsonDoc)["networkPriDNS"] = getIPString(TYPE_DNS1);
+    (*jsonDoc)["networkSecDNS"] = getIPString(TYPE_DNS2);
+    (*jsonDoc)["networkSSID"] = ch_wifiSSID;
+  }
+  if (admin)
+  {
+    (*jsonDoc)["adminUser"] = ch_httpAdminUser;
+  }
+  if (snmp)
+  {
+    (*jsonDoc)["snmpLocation"] = ch_snmpLocation;
+    (*jsonDoc)["snmpSysName"] = ch_snmpSysName;
+    (*jsonDoc)["snmpContact"] = ch_snmpSysContact;
+  }
 }
 
 void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
 {
 
-   DynamicJsonDocument jsonDoc(2048);
+  DynamicJsonDocument jsonDoc(2048);
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
 
@@ -541,13 +547,12 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
     }
     writeHttpPassword(adminPassword);
   }
-  
+
   String adminUser = (*jsonRequest)["adminUser"].as<String>();
   writeHttpUser(adminUser);
-  
+
   commitToPrefs(false);
-  
-  serializeJson(jsonDoc, *responseString);
+  apiGetConfiguration(&jsonDoc, false, false, true);
 }
 
 void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest)
@@ -587,7 +592,7 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
     }
     writeSnmpCommunity(snmpCommunity);
   }
-  
+
   String snmpSysName = (*jsonRequest)["snmpSysName"].as<String>();
   String snmpLocation = (*jsonRequest)["snmpLocation"].as<String>();
   String snmpContact = (*jsonRequest)["snmpContact"].as<String>();
@@ -603,6 +608,7 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
   getSnmpLocation(ch_snmpLocation);
   completeSnmpSetup();
   jsonDoc["restartRequired"] = true;
+
   serializeJson(jsonDoc, *responseString);
 }
 
@@ -610,8 +616,8 @@ void apiSaveSensorConfiguration(String *responseString, JsonObject *jsonRequest)
 {
 }
 
-void apiFactoryReset(String *responseString, JsonObject *jsonRequest) {
-   DynamicJsonDocument jsonDoc(2048);
+void apiFactoryReset(String *responseString, JsonObject *jsonRequest){
+  DynamicJsonDocument jsonDoc(2048);
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
   resetToDefaults(false);
@@ -666,7 +672,9 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
   else if (webAction == "config")
   {
     Serial.println("Processing Get Config Request");
-    apiGetConfiguration(jsonResponse, &reqData);
+    DynamicJsonDocument jsonDoc(2048);
+    apiGetConfiguration(&jsonDoc, true, true, true);
+    serializeJson(jsonDoc, *jsonResponse);
   }
   else if (webAction == "save-network")
   {
@@ -693,9 +701,9 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
     Serial.println("Processing Reset Sensor Config Request");
     apiClearSensorConfiguration(jsonResponse, &reqData);
   }
-  else if (webAction == "factory-reset") 
+  else if (webAction == "factory-reset")
   {
-     Serial.println("Processing Factory Reset Request");
+    Serial.println("Processing Factory Reset Request");
     apiFactoryReset(jsonResponse, &reqData);
   }
   else

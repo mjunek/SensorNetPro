@@ -2,6 +2,10 @@ let ajaxBase = "/json-api";
 let currentSection;
 let statusRefreshTimer;
 let config;
+const sectionFields = new Object;
+sectionFields.admin = ["adminUser"];
+sectionFields.network = ["networkHostname", "networkWifiEnabled", "networkDhcpEnabled", "networkWifiApMode", "networkIP", "networkMask", "networkGateway", "networkPriDNS", "networkSecDNS", "networkSSID"];
+sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
 
 let sensorTable = $("#sensorTable").DataTable({
   autoWidth: false,
@@ -128,9 +132,9 @@ function updateSystemInfo() {
       $("#eth_status_text").text(
         responseData.ethStatus
           ? "Connected | IP: " +
-              responseData.ethIp +
-              " | Speed: " +
-              responseData.etherSpeed
+          responseData.ethIp +
+          " | Speed: " +
+          responseData.etherSpeed
           : "Disconnected"
       );
 
@@ -169,9 +173,9 @@ function updateSystemInfo() {
         $("#wifi_status_text").text(
           responseData.wifiStatus
             ? "Associated | IP: " +
-                responseData.wifiIp +
-                " | RSSI: " +
-                responseData.RSSI
+            responseData.wifiIp +
+            " | RSSI: " +
+            responseData.RSSI
             : "Not connected to AP"
         );
       }
@@ -261,16 +265,54 @@ function setWifiStatus(status) {
 
 function saveSection(section) {
   if (!validate(section)) return;
+  let reqData = new Object();
+
+
   switch (section) {
     case "admin":
+      reqData.webAction = "save-admin";
+      reqData.adminUser = $("#adminUser").val();
+      reqData.adminPassword = $("#adminPassword").val();
+      reqData.modifyAdminPass = ($("#modifyAdminPass").val() == "on");
       break;
     case "network":
+      reqData.webAction = "save-network";
       break;
     case "snmp":
+      reqData.webAction = "save-snmp";
       break;
     case "sensor":
+      reqData.webAction = "save-sensor";
       break;
   }
+
+  $.ajax({
+    url: ajaxBase,
+    contentType: "application/json",
+    type: "POST",
+    dataType: "json",
+    timeout: 10000,
+    data: JSON.stringify(reqData),
+    success: function (responseData) {
+      if (responseData.error == false) {
+        for (field in sectionFields[section]) {
+          console.log("processing section field", section, field);
+        }
+        // config = responseData;
+        // resetSection(section, true);
+        $("#jsSuccessText").text("Configuration saved successfully.");
+        $("#jsSuccess").show();
+
+      } else {
+        $("#jsErrorText").text("There was an error saving the configuration.");
+        $("#jsError").show();
+      }
+    },
+    error: function (error) {
+      $("#jsErrorText").text("There was an error saving the configuration.");
+      $("#jsError").show();
+    },
+  });
 }
 
 function validate(section) {
@@ -521,9 +563,9 @@ function validateWifiSettings() {
   }
 
   if (!changeWpaKey) {
-    $("#networkWpaKey").removeClass("is-invalid").removeClass("is-valid");    
+    $("#networkWpaKey").removeClass("is-invalid").removeClass("is-valid");
   }
-  else if(wpakey == null || wpakey == "" ) {
+  else if (wpakey == null || wpakey == "") {
     $("#networkWpaKeyValidateSuccess").text(
       "Notice: No Wi-Fi encryption will be enabled!"
     );
@@ -554,7 +596,7 @@ function resetSection(section, force) {
   switch (section) {
     case "network":
       $("#networkHostname").val(config.networkHostname);
-      
+
       $("#networkSSID").val(config.networkSSID);
       $("#networkWpaKey").val("");
       $("#networkWpaKey").removeClass("is-invalid").removeClass("is-valid");
@@ -569,7 +611,7 @@ function resetSection(section, force) {
 
       $("#networkWifiModeAP").prop("checked", config.networkWifiApMode);
       $("#networkWifiModeSta").prop("checked", !config.networkWifiApMode);
-      
+
 
       $("#networkDHCPYes").prop("checked", config.networkDhcpEnabled);
       $("#networkDHCPNo").prop("checked", !config.networkDhcpEnabled);
@@ -596,7 +638,7 @@ function resetSection(section, force) {
       $("#adminPassword").val("");
       $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
       $("#adminPassword").prop("disabled", true);
-      $("#modifyAdminPass").prop("checked", false);     
+      $("#modifyAdminPass").prop("checked", false);
       break;
     case "sensor":
       sensorConfigTable.ajax.reload();
@@ -663,7 +705,7 @@ function factoryReset() {
   if (confirm("Are you sure you wish to reset all settings to their factory defaults?")) {
     let reqData = new Object();
     reqData.webAction = "factory-reset";
-  
+
     $.ajax({
       url: ajaxBase,
       contentType: "application/json",
@@ -693,7 +735,7 @@ function clearSensorConfig() {
   if (confirm("Are you sure you wish to reset all sensor configuration? This may also reallocate SNMP index numbers")) {
     let reqData = new Object();
     reqData.webAction = "reset-sensor-config";
-  
+
     $.ajax({
       url: ajaxBase,
       contentType: "application/json",
