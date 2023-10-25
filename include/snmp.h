@@ -25,9 +25,9 @@
 #include <WiFi.h>
 
 void initialiseSnmp(char* ch_snmpCommunity, uint32_t *uptime, char *ch_snmpSysContact, char *ch_snmpSysName, char *ch_snmpLocation);
-void addSensorHandler(char *sensorSerial, char *sensorName, int *temperatureValue, int sensNum);
+void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperatureValue, int sensNum);
 void completeSnmpSetup();
 void snmpAgentLoop();
-void updateSensorName(char *sensorName, int sensNum);
+void updateThermalSensorName(char *sensorName, int sensNum);
 
 #endif // SNMP_H

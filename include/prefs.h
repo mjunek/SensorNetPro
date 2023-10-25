@@ -180,7 +180,7 @@ int getSnmpIndex(char* serialNum);
 int getNextId();
 void clearSnmpMap();
 void getFriendlyName(char* friendlyName, String serial);
-void writeFriendlyName(char *friendlyname, char *serial);
+void writeFriendlyName(const char *friendlyname, const char *serial);
 
 
 #endif //PREFS_H
