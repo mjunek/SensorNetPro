@@ -16,7 +16,7 @@ sectionFields.network = [
 ];
 sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
 
-let sensorTable = $("#sensorTable").DataTable({
+let thermalSensorTable = $("#thermalSensorTable").DataTable({
   autoWidth: false,
   lengthChange: false,
   info: false,
@@ -33,7 +33,7 @@ let sensorTable = $("#sensorTable").DataTable({
     type: "POST",
     timeout: 10000,
     dataType: "json",
-    dataSrc: "sensorData",
+    dataSrc: "thermalSensorData",
     data: function (d) {
       d.webAction = "sensor-data";
       return JSON.stringify(d);
@@ -46,6 +46,7 @@ let sensorTable = $("#sensorTable").DataTable({
     { data: "reading" },
   ],
   columnDefs: [
+    { targets: 0, data: "id", visible: false },
     {
       targets: 3,
       render: function (data, type, row, meta) {
@@ -55,7 +56,7 @@ let sensorTable = $("#sensorTable").DataTable({
   ],
 });
 
-let sensorConfigTable = $("#sensorConfigTable").DataTable({
+let thermalSensorConfigTable = $("#thermalSensorConfigTable").DataTable({
   autoWidth: false,
   lengthChange: false,
   info: false,
@@ -71,7 +72,7 @@ let sensorConfigTable = $("#sensorConfigTable").DataTable({
     contentType: "application/json",
     type: "POST",
     dataType: "json",
-    dataSrc: "sensorData",
+    dataSrc: "thermalSensorData",
     timeout: 10000,
     data: function (d) {
       d.webAction = "sensor-data";
@@ -86,7 +87,7 @@ let sensorConfigTable = $("#sensorConfigTable").DataTable({
       data: "address",
       render: function (data, type, row, meta) {
         return (
-          '<label for="sensorName' +
+          '<label for="thermalSensorName' +
           row.id +
           '" class="col-form-label">' +
           data +
@@ -99,13 +100,15 @@ let sensorConfigTable = $("#sensorConfigTable").DataTable({
       data: "name",
       render: function (data, type, row, meta) {
         return (
-          '<input type="text" id="sensorName' +
+          '<input type="text" id="thermalSensorName' +
           row.id +
-          '" name="sensorName' +
+          '" name="thermalSensorName' +
           row.id +
           '" value="' +
           data +
-          '" maxlength="35" class="form-control text-form-input"/>'
+          '" maxlength="35" data-serial="' +
+          row.address +
+          '" class="form-control text-form-input" onchange="validateBox(this)"/>'
         );
       },
     },
@@ -173,7 +176,7 @@ function updateSystemInfo() {
       } else if (responseData.wifiApMode) {
         $("#wifi_status_icon").html('<use xlink:href="#ico_ap_status"></use>');
         $("#wifi_status_text").text(
-          responseData.wifiStatus ? "Client Connected" : "No Client Connected"
+          responseData.wifiStatus ? "Client Connected | AP IP: " + responseData.wifiIp  : "No Client Connected | AP IP: " + responseData.wifiIp 
         );
       } else {
         $("#wifi_status_icon").html(
@@ -236,10 +239,10 @@ function showSection(sectionName) {
 
   switch (sectionName) {
     case "info":
-      sensorTable.draw();
+      thermalSensorTable.draw();
       updateSystemInfo();
       statusRefreshTimer = setInterval(() => {
-        sensorTable.draw();
+        thermalSensorTable.draw();
         updateSystemInfo();
       }, 10000);
       break;
@@ -274,7 +277,6 @@ function setWifiStatus(status) {
 }
 
 function saveSection(section) {
-  console.log("savesection", section);
   if (!validate(section)) return;
   let saveButton = $("#btnSave_" + section);
   let resetButton = $("#btnReset_" + section);
@@ -284,7 +286,7 @@ function saveSection(section) {
   switch (section) {
     case "admin":
       reqData.webAction = "save-admin";
-      reqData.adminUser = $("#adminUser").val();
+      reqData.adminUser = $("#adminUser").val().trim();
       reqData.adminPassword = $("#adminPassword").val();
       reqData.modifyAdminPass = $("#modifyAdminPass").is(":checked");
       break;
@@ -296,49 +298,51 @@ function saveSection(section) {
       if (wifiMode.length > 0) {
         wifiModeValue = (wifiMode.val() == 1);
       }
-      console.log("wifiMode", wifiMode, "wifiModeValue", wifiModeValue);
-      
       let wifiEnabled = $("input[type='radio'][name='networkWifi']:checked");
       let wifiEnabledValue = false;
       if (wifiEnabled.length > 0) {
         wifiEnabledValue = (wifiEnabled.val() == 1);
       }
-      console.log("wifiEnabled", wifiEnabled, "wifiEnabledValue", wifiEnabledValue);
-
       let dhcpEnabled = $("input[type='radio'][name='networkDHCP']:checked");
       let dhcpEnabledValue = false;
       if (dhcpEnabled.length > 0) {
         dhcpEnabledValue = (dhcpEnabled.val() == 1);
       }
-      console.log("dhcpEnabled", dhcpEnabled, "dhcpEnabledValue", dhcpEnabledValue);
-
       reqData.modifyWpaKey = $("#modifyWpaKey").is(":checked");
       reqData.networkWifi = wifiEnabledValue;
       reqData.networkDhcp = dhcpEnabledValue;
       reqData.networkApMode = wifiModeValue;
-      reqData.networkHostname = $("#networkHostname").val();
-      reqData.networkIP = $("#networkIP").val();
-      reqData.networkMask = $("#networkMask").val();
-      reqData.networkGateway = $("#networkGateway").val();
-      reqData.networkSSID = $("#networkSSID").val();
+      reqData.networkHostname = $("#networkHostname").val().trim();
+      reqData.networkIP = $("#networkIP").val().trim();
+      reqData.networkMask = $("#networkMask").val().trim();
+      reqData.networkGateway = $("#networkGateway").val().trim();
+      reqData.networkSSID = $("#networkSSID").val().trim();
       reqData.networkWpaKey = $("#networkWpaKey").val();
       break;
 
     case "snmp":
       reqData.webAction = "save-snmp";
-      reqData.snmpLocation = $("#snmpLocation").val();
-      reqData.snmpSysName = $("#snmpSysName ").val();
-      reqData.snmpContact = $("#snmpContact").val();
+      reqData.snmpLocation = $("#snmpLocation").val().trim();
+      reqData.snmpSysName = $("#snmpSysName ").val().trim();
+      reqData.snmpContact = $("#snmpContact").val().trim();
       reqData.snmpCommunity = $("#snmpCommunity").val();
       reqData.modifyCommunity = $("#modifyCommunity").is(':checked');
       break;
 
-    case "sensor":
-      reqData.webAction = "save-sensor";
+    case "thermal":
+      reqData.webAction = "save-thermal-sensor";
+      let rowCount = thermalSensorConfigTable.rows().count();
+      reqData.sensorCount = rowCount;
+      for (i = 1; i <= rowCount; i++) {
+        let boxId = "#thermalSensorName" + i;
+        let sensorName = $(boxId).val();
+        let sensorSerial = $(boxId).data("serial");
+        reqData["sensorName_" + i] = sensorName;
+        reqData["sensorSerial_" + i] = sensorSerial;
+      }
       break;
   }
 
-  console.log("sending ajax req", reqData);
   resetButton.prop("disabled", true);
   saveButton.prop("disabled", true);
   saveSpinner.show();
@@ -351,13 +355,10 @@ function saveSection(section) {
     timeout: 10000,
     data: JSON.stringify(reqData),
     success: function (responseData) {
-      console.log("success", responseData);
       if (responseData.error == false) {
         for (field in sectionFields[section]) {
-          console.log("setting config" + sectionFields[section][field] + " =", responseData[sectionFields[section][field]]);
           config[sectionFields[section][field]] = responseData[sectionFields[section][field]];
         }
-        console.log("updated config", config);
         resetSection(section, true);
         resetButton.prop("disabled", false);
         saveButton.prop("disabled", false);
@@ -399,7 +400,7 @@ function validate(section) {
   switch (section) {
     case "admin":
 
-      let adminUser = $("#adminUser").val().toLowerCase();
+      let adminUser = $("#adminUser").val().toLowerCase().trim();
       let adminPassword = $("#adminPassword").val();
       let adminPasswordConfirm = $("#adminPasswordConfirm").val();
       let modifyAdminPass = $("#modifyAdminPass").is(":checked");
@@ -407,13 +408,14 @@ function validate(section) {
       let userRegex = new RegExp('^[a-z]{3,10}$');
       let strongPasswordCheck = new RegExp('(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{8,})');
       let weakPasswordCheck = new RegExp('((?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{6,}))|((?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9])(?=.{8,}))');
+      let adminSuccess = true;
 
       $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
       $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
 
       if (adminUser == null || adminUser == "" || !userRegex.test(adminUser)) {
         $("#adminUser").addClass("is-invalid").removeClass("is-valid");
-        return false;
+        adminSuccess = false;
       } else {
         $("#adminUser").removeClass("is-invalid").addClass("is-valid");
       }
@@ -425,7 +427,7 @@ function validate(section) {
       else if (adminPassword.length < 6) {
         $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
         $("#adminPasswordValidateError").text("Password must be at least 6 characters");
-        return false;
+        adminSuccess = false;
       }
       else if (adminPassword.toUpperCase() == adminUser.toUpperCase()) {
         $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
@@ -436,7 +438,7 @@ function validate(section) {
         if (adminPassword != adminPasswordConfirm) {
           $("#adminPasswordConfirm").addClass("is-invalid").removeClass("is-valid");
           $("#adminPasswordValidateError").text("Passwords do not match.");
-          return false;
+          adminSuccess = false;
         }
         else {
           $("#adminPasswordConfirm").removeClass("is-invalid").addClass("is-valid");
@@ -452,12 +454,16 @@ function validate(section) {
           $("#adminPasswordValidateSuccess").text("Password Strength: Weak");
         }
       }
-      return true;
+      $("#btnSave_admin").prop("disabled", !adminSuccess);
+
+      return adminSuccess;
 
     case "network":
       let ipResult = validateIpSettings();
       let wifiResult = validateWifiSettings();
-      return ipResult && wifiResult;
+      let networkSuccess = ipResult && wifiResult
+      $("#btnSave_network").prop("disabled", !networkSuccess);
+      return networkSuccess;
 
     case "snmp":
       let snmpSuccess = true;
@@ -508,10 +514,42 @@ function validate(section) {
             .addClass("is-valid");
         }
       }
+      $("#btnSave_snmp").prop("disabled", !snmpSuccess);
       return snmpSuccess;
 
-    case "sensor":
-      break;
+    case "thermal":
+      let sensorSuccess = true;
+      for (i = 1; i <= thermalSensorConfigTable.rows().count(); i++) {
+        let sensorName = "thermalSensorName" + i;
+        if (!validateSensor(sensorName)) {
+          sensorSuccess = false;
+        }
+      }
+      $("#btnSave_thermal").prop("disabled", !sensorSuccess);
+      return sensorSuccess;
+  }
+}
+
+function validateBox(textBox) {
+  return validateSensor(textBox.id);
+}
+
+function validateSensor(boxName) {
+  let boxId = "#" + boxName;
+
+  let sensorName = $(boxId).val().trim();
+  let sensorSerial = $(boxId).data("serial");
+  $(boxId).removeClass("is-valid").removeClass("is-invalid");
+  if (sensorName == "") sensorName = sensorSerial;
+  $(boxId).val(sensorName);
+  let sensorNameRegex = new RegExp("^[A-Za-z0-9][A-Za-z0-9@\\-/_=+. ]*[A-Za-z0-9]$");
+  if (sensorNameRegex.test(sensorName)) {
+    $(boxId).addClass("is-valid");
+    return true;
+  }
+  else {
+    $(boxId).addClass("is-invalid");
+    return false;
   }
 }
 
@@ -787,8 +825,8 @@ function resetSection(section, force) {
       $("#adminPasswordConfirm").prop("disabled", true);
       $("#modifyAdminPass").prop("checked", false);
       break;
-    case "sensor":
-      sensorConfigTable.ajax.reload();
+    case "thermal":
+      thermalSensorConfigTable.ajax.reload();
   }
   validate(section);
 }

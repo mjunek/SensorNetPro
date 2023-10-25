@@ -61,7 +61,7 @@
                 </g>
             </g>
         </symbol>
-        <symbol id="ico_sensor_tab" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
+        <symbol id="ico_thermal_tab" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px"
             fill="currentColor">
             <g>
                 <path d="M0,0h24v24H0V0z" fill="none" />
@@ -113,10 +113,10 @@
                     onclick="showSection('info')"><svg class="svgicon">
                         <use xlink:href="#ico_info_tab"></use>
                     </svg> Status</button>
-                <button id="btnNavSensors" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
-                    onclick="showSection('sensor')"><svg class="svgicon">
-                        <use xlink:href="#ico_sensor_tab"></use>
-                    </svg> Sensors</button>
+                <button id="btnNavThermal" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
+                    onclick="showSection('thermal')"><svg class="svgicon">
+                        <use xlink:href="#ico_thermal_tab"></use>
+                    </svg> Thermal</button>
                 <button id="btnNavSnmp" class="btn btn-lg btn-outline-primary px-2 mx-2 py-1"
                     onclick="showSection('snmp')"><svg class="svgicon">
                         <use xlink:href="#ico_snmp_tab"></use>
@@ -152,16 +152,16 @@
         <div id="infoPanel" class="my-3" style="display: none;">
             <div class="ui-section">
                 <div class="row ui-section-header">
-                    <div class="col-12 text-center">Sensor Status</div>
+                    <div class="col-12 text-center">Temperature Sensor Status</div>
                 </div>
                 <div class="row ui-section-body">
                     <div class="col-12">
-                        <table class="table table-bordered table-striped table-sm" id="sensorTable">
+                        <table class="table table-bordered table-striped table-sm" id="thermalSensorTable">
                             <thead>
                                 <tr>
-                                    <th>Sensor ID</th>
-                                    <th>Sensor Address</th>
-                                    <th>Sensor Name</th>
+                                    <th>Id</th>
+                                    <th>Serial Number</th>
+                                    <th>Name</th>
                                     <th>Reading</th>
                                 </tr>
                             </thead>
@@ -227,19 +227,19 @@
                 </div>
             </div>
         </div>
-        <div id="sensorPanel" class="my-3" style="display: none;">
+        <div id="thermalPanel" class="my-3" style="display: none;">
             <div class="ui-section">
                 <div class="row ui-section-header">
-                    <div class="col-12 text-center">Sensor Configuration</div>
+                    <div class="col-12 text-center">Temperature Sensor Configuration</div>
                 </div>
                 <div class="row ui-section-body">
                     <div class="col-12">
-                        <table class="table table-bordered table-striped table-sm" id="sensorConfigTable">
+                        <table class="table table-bordered table-striped table-sm" id="thermalSensorConfigTable">
                             <thead>
                                 <tr>
                                     <th>Sensor ID</th>
-                                    <th>Sensor Serial</th>
-                                    <th>Sensor Name</th>
+                                    <th>Serial Number</th>
+                                    <th>Name</th>
 
                                 </tr>
                             </thead>
@@ -250,14 +250,18 @@
                     </div>
                 </div>
                 <div class="row ui-section-body">
-                    <div class="col-12 text-center">
-                        <button id="btnSave_sensor" class="btn btn-outline-success px-2 mx-1 py-1"
-                            onclick="saveSection('sensor')"><span class="spinner-border spinner-border-sm" role="status"
-                                aria-hidden="true" id="btnSaveSpinner_sensor"
-                                style="display: none;"></span>Save</button> <button id="btnReset_sensor"
-                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
-                            onclick="resetSection('sensor')">Reset</button>
+                    <div class="col-12 text-center py-2">
+                        <small>Sensor names must begin with a letter or number, and only allow limited set of special characters.<br/>Leaving a sensor name blank will reset it to the serial number.</small>
                     </div>
+                    <div class="col-12 text-center">
+                        <button id="btnSave_thermal" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('thermal')"><span class="spinner-border spinner-border-sm" role="status"
+                                aria-hidden="true" id="btnSaveSpinner_thermal"
+                                style="display: none;"></span>Save</button> <button id="btnReset_thermal"
+                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
+                            onclick="resetSection('thermal')">Reset</button>
+                    </div>
+
                 </div>
 
             </div>
@@ -541,8 +545,8 @@
                 </div>
                 <div class="row ui-section-body">
                     <div class="col-12 text-center mb-3">
-                        <button id="btnAdminSave" class="btn btn-outline-success px-2 mx-1 py-1"
-                            onclick="saveSection('admin')">Save</button> <button id="btnAdminReset"
+                        <button id="btnSave_admin" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('admin')">Save</button> <button id="btnReset_admin"
                             class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
                             onclick="resetSection('admin')">Reset</button>
                     </div>

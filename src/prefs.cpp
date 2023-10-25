@@ -425,7 +425,7 @@ void getFriendlyName(char *friendlyName, String serial)
     s.toCharArray(friendlyName, 40);
 }
 
-void writeFriendlyName(char *friendlyname, char *serial)
+void writeFriendlyName(const char *friendlyname, const char *serial)
 {
     char keyname[15];
     strncpy(keyname, serial + 2, 15);

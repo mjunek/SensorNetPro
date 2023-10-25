@@ -235,10 +235,10 @@ void apiSensorData(String *responseString, JsonObject *jsonRequest)
   jsonDoc["errorMessage"] = "Success";
   for (int i = 0; i < countSensors; i++)
   {
-    jsonDoc["sensorData"][i]["id"] = i + 1;
-    jsonDoc["sensorData"][i]["address"] = sensorAddress[i];
-    jsonDoc["sensorData"][i]["name"] = sensorName[i];
-    jsonDoc["sensorData"][i]["reading"] = (float)snmpTemperature[i] / 100.0f;
+    jsonDoc["thermalSensorData"][i]["id"] = i + 1;
+    jsonDoc["thermalSensorData"][i]["address"] = sensorAddress[i];
+    jsonDoc["thermalSensorData"][i]["name"] = sensorName[i];
+    jsonDoc["thermalSensorData"][i]["reading"] = (float)snmpTemperature[i] / 100.0f;
   }
 
   serializeJson(jsonDoc, *responseString);
@@ -259,7 +259,16 @@ void apiSystemStats(String *responseString, JsonObject *jsonRequest)
   int i_seconds = remainder - (i_minutes * 60);
 
   String runTime = String() + i_days + "d " + i_hours + "h " + i_minutes + "m " + i_seconds + "s";
-  String runningWifiIP = String() + WiFi.localIP()[0] + "." + WiFi.localIP()[1] + "." + WiFi.localIP()[2] + "." + WiFi.localIP()[3];
+  String runningWifiIP;
+  if (ap_on)
+  {
+    runningWifiIP = String() + WiFi.softAPIP()[0] + "." + WiFi.softAPIP()[1] + "." + WiFi.softAPIP()[2] + "." + WiFi.softAPIP()[3];
+  }
+  else
+  {
+    runningWifiIP = String() + WiFi.localIP()[0] + "." + WiFi.localIP()[1] + "." + WiFi.localIP()[2] + "." + WiFi.localIP()[3];
+  }
+
   String runningEthIP = String() + ETH.localIP()[0] + "." + ETH.localIP()[1] + "." + ETH.localIP()[2] + "." + ETH.localIP()[3];
   String configuredIP = getIPString(TYPE_ADDR);
   String configuredMask = getIPString(TYPE_MASK);
@@ -426,7 +435,7 @@ void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest
   loadPreferences(true);
   apiGetConfiguration(&jsonDoc, true, false, false);
   jsonDoc["restartRequired"] = true;
-   settingsRebootNeeded = true;
+  settingsRebootNeeded = true;
   serializeJson(jsonDoc, *responseString);
 }
 
@@ -483,8 +492,56 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
   serializeJson(jsonDoc, *responseString);
 }
 
-void apiSaveSensorConfiguration(String *responseString, JsonObject *jsonRequest)
+void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonRequest)
 {
+  DynamicJsonDocument jsonDoc(2048);
+  jsonDoc["error"] = false;
+  jsonDoc["errorMessage"] = "Success";
+
+  if (not(*jsonRequest)["sensorCount"].is<int>())
+  {
+    jsonDoc["error"] = true;
+    jsonDoc["errorMessage"] = "Invalid request, not all parameters supplied.";
+    serializeJson(jsonDoc, *responseString);
+    return;
+  }
+  int sensorCount = (*jsonRequest)["sensorCount"].as<int>();
+  for (int i = 1; i <= sensorCount; i++)
+  {
+    if (not(*jsonRequest)["sensorName_" + String(i)].is<String>() || not(*jsonRequest)["sensorSerial_" + String(i)].is<String>())
+    {
+      jsonDoc["error"] = true;
+      jsonDoc["errorMessage"] = "Invalid request, not all parameters supplied.";
+      continue;
+    }
+    String sensAddr = (*jsonRequest)["sensorSerial_" + String(i)].as<String>();
+    String sensName = (*jsonRequest)["sensorName_" + String(i)].as<String>();
+    Serial.printf("UpdateSensorName: Processing serial: %s with new name %s\n", sensAddr.c_str(), sensName.c_str());
+    int sensNum = 0;
+    bool found = false;
+    while (sensNum < countSensors)
+    {
+      if (!strcmp(sensAddr.c_str(), sensorAddress[sensNum]))
+      {
+        found = true;
+        break;
+      }
+      sensNum++;
+    }
+
+    if (!found)
+    {
+      jsonDoc["error"] = true;
+      jsonDoc["errorMessage"] = "Sensor does not exist, not updating";
+      continue;
+    }
+    writeFriendlyName(sensName.c_str(), sensAddr.c_str());
+    getFriendlyName(sensorName[sensNum], sensAddr.c_str());
+    updateThermalSensorName(sensorName[sensNum], sensNum);
+  }
+  completeSnmpSetup();
+  jsonDoc["restartRequired"] = false;
+  serializeJson(jsonDoc, *responseString);
 }
 
 void apiFactoryReset(String *responseString, JsonObject *jsonRequest)
@@ -509,6 +566,8 @@ void apiClearSensorConfiguration(String *responseString, JsonObject *jsonRequest
 
 void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
 {
+  if (!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+    return request->requestAuthentication("SensorNetPro", true);
 
   if (not json.is<JsonObject>())
   {
@@ -563,10 +622,10 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
     Serial.println("Processing Save SNMP Settings Request");
     apiSaveSnmpConfiguration(jsonResponse, &reqData);
   }
-  else if (webAction == "save-sensor")
+  else if (webAction == "save-thermal-sensor")
   {
-    Serial.println("Processing Save Sensor Settings Request");
-    apiSaveSensorConfiguration(jsonResponse, &reqData);
+    Serial.println("Processing Save Thermal Sensor Settings Request");
+    apiSaveThermalSensorConfiguration(jsonResponse, &reqData);
   }
   else if (webAction == "reset-sensor-config")
   {
@@ -597,8 +656,12 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
 void initPortal()
 {
   Serial.println("Initialising web portal - setting up routing");
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/index.html", "text/html", false); });
+            { 
+              if(!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+                request->requestAuthentication("SensorNetPro", true);
+            request->send(SPIFFS, "/index.html", "text/html", false); });
   server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/bootstrap.min.css", "text/css", false); });
   server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -618,9 +681,13 @@ void initPortal()
   server.on("/sensorNetPro.js", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/sensorNetPro.js", "text/javascript", false); });
   server.on("/reboot.html", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/reboot.html", "text/html", false); });
+            { if(!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+                request->requestAuthentication("SensorNetPro", true);
+                 request->send(SPIFFS, "/reboot.html", "text/html", false); });
   server.on("/reboot.js", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/reboot.js", "text/javascript", false); });
+            {  if(!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+                request->requestAuthentication("SensorNetPro", true);
+                request->send(SPIFFS, "/reboot.js", "text/javascript", false); });
   AsyncCallbackJsonWebHandler *apiHandler = new AsyncCallbackJsonWebHandler("/json-api", jsonApiHandler);
 
   server.addHandler(apiHandler);
@@ -763,7 +830,7 @@ void setup()
     hexString.toCharArray(sensorAddress[i], 20);
     sensorName[i] = (char *)malloc(40);
     getFriendlyName(sensorName[i], hexString);
-    addSensorHandler(sensorAddress[i], sensorName[i], snmpTemperature, i);
+    addThermalSensorHandler(sensorAddress[i], sensorName[i], snmpTemperature, i);
   }
   completeSnmpSetup();
   initPortal();
