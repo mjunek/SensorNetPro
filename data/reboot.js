@@ -2,19 +2,24 @@ let ajaxBase = "/json-api";
 let reqData = new Object();
 reqData.webAction = "reboot";
 
-$.ajax({
-  url: ajaxBase,
-  contentType: "application/json",
-  type: "POST",
-  dataType: "json",
-  timeout: 500,
-  data: JSON.stringify(reqData),
-  success: function (responseData) {
-    window.location.replace("/");
-  },
-  error: function (error) {
-    setTimeout(checkPage, 5000);  },
-});
+setTimeout(rebootNow, 3000);
+
+function rebootNow() {
+    $.ajax({
+        url: ajaxBase,
+        contentType: "application/json",
+        type: "POST",
+        dataType: "json",
+        timeout: 500,
+        data: JSON.stringify(reqData),
+        success: function (responseData) {
+            window.location.replace("/");
+        },
+        error: function (error) {
+            setTimeout(checkPage, 5000);
+        },
+    });
+}
 
 function checkPage() {
     let statusData = new Object();

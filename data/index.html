@@ -251,8 +251,10 @@
                 </div>
                 <div class="row ui-section-body">
                     <div class="col-12 text-center">
-                        <button id="btnSensorSave" class="btn btn-outline-success px-2 mx-1 py-1"
-                            onclick="saveSection('sensor')">Save</button> <button id="btnSensorReset"
+                        <button id="btnSave_sensor" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('sensor')"><span class="spinner-border spinner-border-sm" role="status"
+                                aria-hidden="true" id="btnSaveSpinner_sensor"
+                                style="display: none;"></span>Save</button> <button id="btnReset_sensor"
                             class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
                             onclick="resetSection('sensor')">Reset</button>
                     </div>
@@ -271,7 +273,7 @@
                         <table class="table table-sm status-table">
                             <tbody>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="snmpCommunity"
+                                    <td width="40%" class="status-table-header text-right"><label for="snmpCommunity"
                                             class="col-form-label">Community String</label></td>
                                     <td class="form-row status-table-data">
                                         <input class="form-check-inline ml-2" type="checkbox" name="modifyCommunity"
@@ -289,19 +291,19 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="snmpLocation"
+                                    <td width="40%" class="status-table-header text-right"><label for="snmpLocation"
                                             class="col-form-label">Location</label></td>
                                     <td class="status-table-data"><input id="snmpLocation" name="snmpLocation"
                                             maxlength="25" type="text" class="form-control text-form-input"></td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="snmpSysName"
+                                    <td width="40%" class="status-table-header text-right"><label for="snmpSysName"
                                             class="col-form-label">System Name</label></td>
                                     <td class="status-table-data"><input id="snmpSysName" name="snmpSysName"
                                             maxlength="25" type="text" class="form-control text-form-input"></td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="snmpContact"
+                                    <td width="40%" class="status-table-header text-right"><label for="snmpContact"
                                             class="col-form-label">Contact</label></td>
                                     <td class="status-table-data"><input id="snmpContact" name="snmpContact"
                                             maxlength="25" type="text" class="form-control text-form-input"></td>
@@ -312,9 +314,10 @@
                 </div>
                 <div class="row ui-section-body">
                     <div class="col-12 text-center">
-                        <button id="btnSnmpSave" class="btn btn-outline-success px-2 mx-1 py-1"
-                            onclick="saveSection('snmp')">Save</button> <button id="btnSnmpReset"
-                            class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
+                        <button id="btnSave_snmp" class="btn btn-outline-success px-2 mx-1 py-1"
+                            onclick="saveSection('snmp')"><span class="spinner-border spinner-border-sm" role="status"
+                                aria-hidden="true" id="btnSaveSpinner_snmp" style="display: none;"></span>Save</button>
+                        <button id="btnReset_snmp" class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
                             onclick="resetSection('snmp')">Reset</button>
                     </div>
                 </div>
@@ -331,7 +334,7 @@
                         <table class="table table-sm status-table">
                             <tbody>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkHostname"
+                                    <td width="40%" class="status-table-header text-right"><label for="networkHostname"
                                             class="col-form-label">Host Name</label></td>
                                     <td class="status-table-data"><input id="networkHostname" name="networkHostname"
                                             maxlength="25" onchange="validate('network')" type="text"
@@ -354,7 +357,7 @@
                         <table class="table table-sm status-table">
                             <tbody>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label
+                                    <td width="40%" class="status-table-header text-right"><label
                                             class="col-form-label">Wi-Fi Enabled</label></td>
                                     <td class="status-table-data">
                                         <div class="form-check form-check-inline col-form-label">
@@ -370,7 +373,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label
+                                    <td width="40%" class="status-table-header text-right"><label
                                             class="col-form-label">Wi-Fi Mode</label></td>
                                     <td class="status-table-data">
                                         <div class="form-check form-check-inline col-form-label">
@@ -386,7 +389,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkSSID"
+                                    <td width="40%" class="status-table-header text-right"><label for="networkSSID"
                                             class="col-form-label">SSID</label></td>
                                     <td class="status-table-data"><input id="networkSSID" name="networkSSID"
                                             maxlength="25" onchange="validate('network')" type="text"
@@ -395,7 +398,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkWpaKey"
+                                    <td width="40%" class="status-table-header text-right"><label for="networkWpaKey"
                                             class="col-form-label">WPA Key</label></td>
                                     <td class="form-row status-table-data">
                                         <input class="form-check-inline ml-2" type="checkbox" name="modifyWpaKey"
@@ -425,7 +428,7 @@
                             <tbody>
 
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label
+                                    <td width="40%" class="status-table-header text-right"><label
                                             class="col-form-label">DHCP Enabled</label></td>
                                     <td class="status-table-data form-check">
                                         <div class="form-check form-check-inline col-form-label">
@@ -442,7 +445,7 @@
                                 </tr>
 
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkIP"
+                                    <td width="40%" class="status-table-header text-right"><label for="networkIP"
                                             class="col-form-label">IP Address</label></td>
                                     <td class="status-table-data"><input id="networkIP" name="networkIP" maxlength="15"
                                             onchange="validate('network')" type="text"
@@ -452,7 +455,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkMask"
+                                    <td width="40%" class="status-table-header text-right"><label for="networkMask"
                                             class="col-form-label">Subnet Mask</label></td>
                                     <td class="status-table-data"><input id="networkMask" name="networkMask"
                                             maxlength="15" onchange="validate('network')" type="text"
@@ -462,7 +465,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkGateway"
+                                    <td width="40%" class="status-table-header text-right"><label for="networkGateway"
                                             class="col-form-label">Default Gateway</label></td>
                                     <td class="status-table-data"><input id="networkGateway" name="networkGateway"
                                             onchange="validate('network')" maxlength="15" type="text"
@@ -472,26 +475,9 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkPriDNS"
-                                            class="col-form-label">Primary DNS</label></td>
-                                    <td class="status-table-data"><input id="networkPriDNS" name="networkPriDNS"
-                                            onchange="validate('network')" maxlength="15" type="text"
-                                            class="form-control text-form-input">
-                                        <div class="invalid-feedback" id="networkPriDNSValidateError">Invalid address
-                                        </div>
-                                    </td>
+                                    <td colspan="2" class="text-center"><small>Note: TCP/IP settings apply to both the
+                                            Wi-Fi and Ethernet interfaces simultaneously.</small></td>
                                 </tr>
-                                <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="networkSecDNS"
-                                            class="col-form-label">Secondary DNS</label></td>
-                                    <td class="status-table-data"><input id="networkSecDNS" name="networkSecDNS"
-                                            onchange="validate('network')" maxlength="15" type="text"
-                                            class="form-control text-form-input">
-                                        <div class="invalid-feedback" id="networkSecDNSValidateError">Invalid address
-                                        </div>
-                                    </td>
-                                </tr>
-
                             </tbody>
                         </table>
                     </div>
@@ -499,8 +485,10 @@
 
                 <div class="row ui-section-body">
                     <div class="col-12 text-center">
-                        <button id="btnNetworkSave" class="btn btn-outline-success px-2 mx-1 py-1" type="button"
-                            onclick="saveSection('network')">Save</button> <button id="btnNetworkReset"
+                        <button id="btnSave_network" class="btn btn-outline-success px-2 mx-1 py-1" type="button"
+                            onclick="saveSection('network')"><span class="spinner-border spinner-border-sm"
+                                role="status" aria-hidden="true" id="btnSaveSpinner_network"
+                                style="display: none;"></span>Save</button> <button id="btnReset_network"
                             class="btn btn-outline-danger px-2 mx-1 py-1" type="reset"
                             onclick="resetSection('network')">Reset</button>
                     </div>
@@ -519,14 +507,17 @@
                         <table class="table table-sm status-table">
                             <tbody>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="adminUser"
+                                    <td width="40%" class="status-table-header text-right"><label for="adminUser"
                                             class="col-form-label">User Name</label></td>
-                                    <td class="status-table-data"><input id="adminUser" name="adminUser" maxlength="25"
+                                    <td class="status-table-data"><input id="adminUser" name="adminUser" maxlength="10"
                                             type="text" class="form-control text-form-input"
-                                            onchange="validate('admin')"></td>
+                                            onchange="validate('admin')">
+                                        <div class="invalid-feedback" id="adminUserValidateError">User Name must be
+                                            between 3 and 10 characters, and include only the letters A to Z</div>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td width="50%" class="status-table-header text-right"><label for="adminPassword"
+                                    <td width="40%" class="status-table-header text-right"><label for="adminPassword"
                                             class="col-form-label">Password</label></td>
                                     <td class="form-row status-table-data">
                                         <input class="form-check-inline ml-2" type="checkbox" name="modifyAdminPass"
@@ -534,6 +525,14 @@
                                         <input id="adminPassword" name="adminPassword" onchange="validate('admin')"
                                             maxlength="25" type="password" disabled placeholder="Enter new password"
                                             class="form-control text-form-pass">
+                                        <input id="adminPasswordConfirm" name="adminPasswordConfirm"
+                                            onchange="validate('admin')" maxlength="25" type="password" disabled
+                                            placeholder="Confirm new password"
+                                            class="form-control text-form-passconfirm">
+                                        <div class="invalid-feedback" id="adminPasswordValidateError">Invalid Password
+                                        </div>
+                                        <div class="valid-feedback" id="adminPasswordValidateSuccess"></div>
+
                                     </td>
                                 </tr>
                             </tbody>

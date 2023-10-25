@@ -46,8 +46,6 @@
 #define __DEF_IPADDR 192, 168, 4, 1
 #define __DEF_MASK 255, 255, 255, 0
 #define __DEF_GATEWAY 192, 168, 4, 1
-#define __DEF_DNS1 8, 8, 8, 8
-#define __DEF_DNS2 8, 8, 4, 4
 
 // Hostname
 #define __DEF_HOSTNAME "SensorNetPro"
@@ -103,16 +101,6 @@
 #define __PREF_GATEWAY_3 "gw3"
 #define __PREF_GATEWAY_4 "gw4"
 
-#define __PREF_DNS1_1 "dnsp1"
-#define __PREF_DNS1_2 "dnsp2"
-#define __PREF_DNS1_3 "dnsp3"
-#define __PREF_DNS1_4 "dnsp4"
- 
-#define __PREF_DNS2_1 "dnss1"
-#define __PREF_DNS2_2 "dnss2"
-#define __PREF_DNS2_3 "dnss3"
-#define __PREF_DNS2_4 "dnss4"
-
 #define __PREF_HOSTNAME "host"
 #define __PREF_HOSTNAME_LEN 31
 
@@ -134,24 +122,20 @@
 #define __PREF_SNMP_SYSLOCATION "sysloc"
 #define __PREF_SNMP_SYSLOCATION_LEN 31
 
-#define __PREF_ADMIN_USER "user"
-#define __PREF_ADMIN_USER_LEN 31
+#define __PREF_ADMIN_USER "admin"
+#define __PREF_ADMIN_USER_LEN 14
 
-#define __PREF_ADMIN_PASS "pass"
+#define __PREF_ADMIN_PASS "password"
 #define __PREF_ADMIN_PASS_LEN 31
 
 #define TYPE_ADDR 1
 #define TYPE_MASK 2
 #define TYPE_GWAY 3
-#define TYPE_DNS1 4
-#define TYPE_DNS2 5
 
 
 void writeIPAddress(int octet1, int octet2, int octet3, int octet4);
 void writeSubnetMask(int octet1, int octet2, int octet3, int octet4);
 void writeDefaultGateway(int octet1, int octet2, int octet3, int octet4);
-void writePrimaryDNS(int octet1, int octet2, int octet3, int octet4);
-void writeSecondaryDNS(int octet1, int octet2, int octet3, int octet4);
 void writeHostname(String hostname);
 void writeSSID(String ssid);
 void writeWpaKey(String wpaKey);
@@ -169,8 +153,6 @@ void writeWirelesEnabled(bool wifiMode);
 IPAddress getIPAddress();
 IPAddress getSubnetMask();
 IPAddress getDefaultGateway();
-IPAddress getPrimaryDNS();
-IPAddress getSecondaryDNS();
 
 void getHostname(char hostname[__PREF_HOSTNAME_LEN]);
 void getSSID(char ssid[__PREF_SSID_LEN]);

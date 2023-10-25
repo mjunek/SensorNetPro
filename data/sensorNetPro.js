@@ -12,8 +12,6 @@ sectionFields.network = [
   "networkIP",
   "networkMask",
   "networkGateway",
-  "networkPriDNS",
-  "networkSecDNS",
   "networkSSID",
 ];
 sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
@@ -143,9 +141,9 @@ function updateSystemInfo() {
       $("#eth_status_text").text(
         responseData.ethStatus
           ? "Connected | IP: " +
-              responseData.ethIp +
-              " | Speed: " +
-              responseData.etherSpeed
+          responseData.ethIp +
+          " | Speed: " +
+          responseData.etherSpeed
           : "Disconnected"
       );
 
@@ -184,9 +182,9 @@ function updateSystemInfo() {
         $("#wifi_status_text").text(
           responseData.wifiStatus
             ? "Associated | IP: " +
-                responseData.wifiIp +
-                " | RSSI: " +
-                responseData.RSSI
+            responseData.wifiIp +
+            " | RSSI: " +
+            responseData.rssi
             : "Not connected to AP"
         );
       }
@@ -264,8 +262,6 @@ function setDhcpStatus(status) {
   $("#networkIP").attr("readonly", status);
   $("#networkMask").attr("readonly", status);
   $("#networkGateway").attr("readonly", status);
-  $("#networkPriDNS").attr("readonly", status);
-  $("#networkSecDNS").attr("readonly", status);
   validate("network");
 }
 
@@ -280,6 +276,9 @@ function setWifiStatus(status) {
 function saveSection(section) {
   console.log("savesection", section);
   if (!validate(section)) return;
+  let saveButton = $("#btnSave_" + section);
+  let resetButton = $("#btnReset_" + section);
+  let saveSpinner = $("#btnSaveSpinner_" + section);
   let reqData = new Object();
 
   switch (section) {
@@ -287,24 +286,63 @@ function saveSection(section) {
       reqData.webAction = "save-admin";
       reqData.adminUser = $("#adminUser").val();
       reqData.adminPassword = $("#adminPassword").val();
-      reqData.modifyAdminPass = $("#modifyAdminPass").val() == "on";
+      reqData.modifyAdminPass = $("#modifyAdminPass").is(":checked");
       break;
+
     case "network":
       reqData.webAction = "save-network";
+      let wifiMode = $("input[type='radio'][name='networkWifiMode']:checked");
+      let wifiModeValue = false;
+      if (wifiMode.length > 0) {
+        wifiModeValue = (wifiMode.val() == 1);
+      }
+      console.log("wifiMode", wifiMode, "wifiModeValue", wifiModeValue);
+      
+      let wifiEnabled = $("input[type='radio'][name='networkWifi']:checked");
+      let wifiEnabledValue = false;
+      if (wifiEnabled.length > 0) {
+        wifiEnabledValue = (wifiEnabled.val() == 1);
+      }
+      console.log("wifiEnabled", wifiEnabled, "wifiEnabledValue", wifiEnabledValue);
+
+      let dhcpEnabled = $("input[type='radio'][name='networkDHCP']:checked");
+      let dhcpEnabledValue = false;
+      if (dhcpEnabled.length > 0) {
+        dhcpEnabledValue = (dhcpEnabled.val() == 1);
+      }
+      console.log("dhcpEnabled", dhcpEnabled, "dhcpEnabledValue", dhcpEnabledValue);
+
+      reqData.modifyWpaKey = $("#modifyWpaKey").is(":checked");
+      reqData.networkWifi = wifiEnabledValue;
+      reqData.networkDhcp = dhcpEnabledValue;
+      reqData.networkApMode = wifiModeValue;
+      reqData.networkHostname = $("#networkHostname").val();
+      reqData.networkIP = $("#networkIP").val();
+      reqData.networkMask = $("#networkMask").val();
+      reqData.networkGateway = $("#networkGateway").val();
+      reqData.networkSSID = $("#networkSSID").val();
+      reqData.networkWpaKey = $("#networkWpaKey").val();
       break;
+
     case "snmp":
       reqData.webAction = "save-snmp";
       reqData.snmpLocation = $("#snmpLocation").val();
       reqData.snmpSysName = $("#snmpSysName ").val();
       reqData.snmpContact = $("#snmpContact").val();
       reqData.snmpCommunity = $("#snmpCommunity").val();
-      reqData.modifySnmpCommunity = $("#modifySnmpCommunity").val() == "on";
+      reqData.modifyCommunity = $("#modifyCommunity").is(':checked');
       break;
+
     case "sensor":
       reqData.webAction = "save-sensor";
       break;
   }
+
   console.log("sending ajax req", reqData);
+  resetButton.prop("disabled", true);
+  saveButton.prop("disabled", true);
+  saveSpinner.show();
+
   $.ajax({
     url: ajaxBase,
     contentType: "application/json",
@@ -316,10 +354,17 @@ function saveSection(section) {
       console.log("success", responseData);
       if (responseData.error == false) {
         for (field in sectionFields[section]) {
-          console.log("processing section field", section, field);
+          console.log("setting config" + sectionFields[section][field] + " =", responseData[sectionFields[section][field]]);
+          config[sectionFields[section][field]] = responseData[sectionFields[section][field]];
         }
-        // config = responseData;
-        // resetSection(section, true);
+        console.log("updated config", config);
+        resetSection(section, true);
+        resetButton.prop("disabled", false);
+        saveButton.prop("disabled", false);
+        saveSpinner.hide();
+        if (responseData.restartRequired) {
+          $("#rebootRequired").show();
+        }
         $("#jsSuccessText").text("Configuration saved successfully.");
         $("#jsSuccess").show();
         setTimeout(() => {
@@ -328,14 +373,21 @@ function saveSection(section) {
       } else {
         $("#jsErrorText").text("There was an error saving the configuration.");
         $("#jsError").show();
+        resetButton.prop("disabled", false);
+        saveButton.prop("disabled", false);
+        saveSpinner.hide();
         setTimeout(() => {
           $("#jsError").hide();
         }, 5000);
       }
     },
+
     error: function (error) {
       $("#jsErrorText").text("There was an error saving the configuration.");
       $("#jsError").show();
+      resetButton.prop("disabled", false);
+      saveButton.prop("disabled", false);
+      saveSpinner.hide();
       setTimeout(() => {
         $("#jsError").hide();
       }, 5000);
@@ -346,27 +398,59 @@ function saveSection(section) {
 function validate(section) {
   switch (section) {
     case "admin":
-      let adminUser = $("#adminUser").val();
+
+      let adminUser = $("#adminUser").val().toLowerCase();
       let adminPassword = $("#adminPassword").val();
-      let modifyAdminPass = $("#modifyAdminPass").val() == "on";
-      if (adminUser == null || adminUser == "") {
+      let adminPasswordConfirm = $("#adminPasswordConfirm").val();
+      let modifyAdminPass = $("#modifyAdminPass").is(":checked");
+
+      let userRegex = new RegExp('^[a-z]{3,10}$');
+      let strongPasswordCheck = new RegExp('(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{8,})');
+      let weakPasswordCheck = new RegExp('((?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{6,}))|((?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9])(?=.{8,}))');
+
+      $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
+      $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
+
+      if (adminUser == null || adminUser == "" || !userRegex.test(adminUser)) {
         $("#adminUser").addClass("is-invalid").removeClass("is-valid");
         return false;
       } else {
         $("#adminUser").removeClass("is-invalid").addClass("is-valid");
       }
 
-      if (
-        !(adminPassword == null || adminPassword == "") &&
-        adminPassword.length < 8 &&
-        modifyAdminPass
-      ) {
-        $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
-        return false;
-      } else if (!modifyAdminPass) {
+      if (!modifyAdminPass) {
         $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
-      } else {
-        $("#adminPassword").removeClass("is-invalid").addClass("is-valid");
+        $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
+      }
+      else if (adminPassword.length < 6) {
+        $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
+        $("#adminPasswordValidateError").text("Password must be at least 6 characters");
+        return false;
+      }
+      else if (adminPassword.toUpperCase() == adminUser.toUpperCase()) {
+        $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
+        $("#adminPasswordValidateError").text("Password cannot match user name");
+        return false;
+      }
+      else {
+        if (adminPassword != adminPasswordConfirm) {
+          $("#adminPasswordConfirm").addClass("is-invalid").removeClass("is-valid");
+          $("#adminPasswordValidateError").text("Passwords do not match.");
+          return false;
+        }
+        else {
+          $("#adminPasswordConfirm").removeClass("is-invalid").addClass("is-valid");
+          $("#adminPassword").removeClass("is-invalid").addClass("is-valid");
+        }
+        if (strongPasswordCheck.test(adminPassword)) {
+          $("#adminPasswordValidateSuccess").text("Password Strength: Strong");
+        }
+        else if (weakPasswordCheck.test(adminPassword)) {
+          $("#adminPasswordValidateSuccess").text("Password Strength: Medium");
+        }
+        else {
+          $("#adminPasswordValidateSuccess").text("Password Strength: Weak");
+        }
       }
       return true;
 
@@ -376,21 +460,23 @@ function validate(section) {
       return ipResult && wifiResult;
 
     case "snmp":
-      let snmpSuccess=true;
+      let snmpSuccess = true;
       let snmpCommunity = $("#snmpCommunity").val();
       let snmpCommunityConfirm = $("#snmpCommunityConfirm").val();
-      let modifySnmpCommunity = $("#modifyCommunity").val() == "on";
+      let modifyCommunity = $("#modifyCommunity").is(':checked');
+      $("#snmpCommunity").removeClass("is-invalid").removeClass("is-valid");
+      $("#snmpCommunityConfirm").removeClass("is-invalid").removeClass("is-valid");
 
       if (
-        modifySnmpCommunity &&
+        modifyCommunity &&
         (snmpCommunity == null || snmpCommunity == "")
       ) {
         $("#snmpCommunity").addClass("is-invalid").removeClass("is-valid");
         $("#snmpCommunityValidateError").text(
           "Community String must be supplied"
         );
-        snmpSuccess= false;
-      } else if (!modifySnmpCommunity) {
+        snmpSuccess = false;
+      } else if (!modifyCommunity) {
         $("#snmpCommunity").removeClass("is-invalid").removeClass("is-valid");
         $("#snmpCommunityConfirm")
           .removeClass("is-invalid")
@@ -407,7 +493,7 @@ function validate(section) {
           $("#snmpCommunityValidateError").text(
             "Please confirm the Community String"
           );
-          snmpSuccess= false;
+          snmpSuccess = false;
         } else if (snmpCommunityConfirm != snmpCommunity) {
           $("#snmpCommunityConfirm")
             .addClass("is-invalid")
@@ -415,7 +501,7 @@ function validate(section) {
           $("#snmpCommunityValidateError").text(
             "Community Strings do not match."
           );
-          snmpSuccess= false;
+          snmpSuccess = false;
         } else {
           $("#snmpCommunityConfirm")
             .removeClass("is-invalid")
@@ -423,6 +509,7 @@ function validate(section) {
         }
       }
       return snmpSuccess;
+
     case "sensor":
       break;
   }
@@ -528,16 +615,12 @@ function validateIpSettings() {
     $("#networkIP").removeClass("is-invalid").removeClass("is-valid");
     $("#networkMask").removeClass("is-invalid").removeClass("is-valid");
     $("#networkGateway").removeClass("is-invalid").removeClass("is-valid");
-    $("#networkPriDNS").removeClass("is-invalid").removeClass("is-valid");
-    $("#networkSecDNS").removeClass("is-invalid").removeClass("is-valid");
     return true;
   }
 
   let ipAddress = $("#networkIP").val();
   let subnetMask = $("#networkMask").val();
   let gateway = $("#networkGateway").val();
-  let priDns = $("#networkPriDNS").val();
-  let secDns = $("#networkSecDNS").val();
   let invalid = false;
   if (!isValidIP(ipAddress)) {
     invalid = invalid | true;
@@ -563,19 +646,6 @@ function validateIpSettings() {
     $("#networkGateway").removeClass("is-invalid").addClass("is-valid");
   }
 
-  if (!isValidIP(priDns)) {
-    invalid = invalid | true;
-    $("#networkPriDNS").addClass("is-invalid").removeClass("is-valid");
-  } else {
-    $("#networkPriDNS").removeClass("is-invalid").addClass("is-valid");
-  }
-
-  if (!isValidIP(secDns)) {
-    invalid = invalid | true;
-    $("#networkSecDNS").addClass("is-invalid").removeClass("is-valid");
-  } else {
-    $("#networkSecDNS").removeClass("is-invalid").addClass("is-valid");
-  }
   if (invalid) return false;
 
   switch (isValidIpGatewaySubnet(ipAddress, subnetMask, gateway)) {
@@ -681,8 +751,6 @@ function resetSection(section, force) {
       $("#networkIP").val(config.networkIP);
       $("#networkMask").val(config.networkMask);
       $("#networkGateway").val(config.networkGateway);
-      $("#networkPriDNS").val(config.networkPriDNS);
-      $("#networkSecDNS").val(config.networkSecDNS);
 
       $("#networkWifiModeAP").prop("checked", config.networkWifiApMode);
       $("#networkWifiModeSta").prop("checked", !config.networkWifiApMode);
@@ -698,11 +766,14 @@ function resetSection(section, force) {
 
     case "snmp":
       $("#snmpCommunity").val("");
+      $("#snmpCommunityConfirm").val("");
       $("#snmpLocation").val(config.snmpLocation);
       $("#snmpSysName").val(config.snmpSysName);
       $("#snmpContact").val(config.snmpContact);
       $("#snmpCommunity").removeClass("is-invalid").removeClass("is-valid");
       $("#snmpCommunity").prop("disabled", true);
+      $("#snmpCommunityConfirm").removeClass("is-invalid").removeClass("is-valid");
+      $("#snmpCommunityConfirm").prop("disabled", true);
       $("#modifyCommunity").prop("checked", false);
       break;
 
@@ -711,6 +782,9 @@ function resetSection(section, force) {
       $("#adminPassword").val("");
       $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
       $("#adminPassword").prop("disabled", true);
+      $("#adminPasswordConfirm").val("");
+      $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
+      $("#adminPasswordConfirm").prop("disabled", true);
       $("#modifyAdminPass").prop("checked", false);
       break;
     case "sensor":
@@ -758,8 +832,11 @@ function setModifyAdminPass(checkbox) {
   if (!checkbox.checked) {
     $("#adminPassword").val("");
     $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
+    $("#adminPasswordConfirm").val("");
+    $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
   }
   $("#adminPassword").prop("disabled", !checkbox.checked);
+  $("#adminPasswordConfirm").prop("disabled", !checkbox.checked);
 }
 
 function setModifyWpaKey(checkbox) {
