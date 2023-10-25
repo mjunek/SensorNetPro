@@ -55,22 +55,6 @@ void writeDefaultGateway(int octet1, int octet2, int octet3, int octet4)
     prefs.putUChar(__PREF_GATEWAY_4, octet4);
     Serial.printf("PREFS: writeDefaultGateway complete - %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
 }
-void writePrimaryDNS(int octet1, int octet2, int octet3, int octet4)
-{
-    prefs.putUChar(__PREF_DNS1_1, octet1);
-    prefs.putUChar(__PREF_DNS1_2, octet2);
-    prefs.putUChar(__PREF_DNS1_3, octet3);
-    prefs.putUChar(__PREF_DNS1_4, octet4);
-    Serial.printf("PREFS: writePrimaryDNS complete - %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
-}
-void writeSecondaryDNS(int octet1, int octet2, int octet3, int octet4)
-{
-    prefs.putUChar(__PREF_DNS2_1, octet1);
-    prefs.putUChar(__PREF_DNS2_2, octet2);
-    prefs.putUChar(__PREF_DNS2_3, octet3);
-    prefs.putUChar(__PREF_DNS2_4, octet4);
-    Serial.printf("PREFS: writeSecondaryDNS complete - %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
-}
 
 void writeHostname(String hostname)
 {
@@ -170,10 +154,6 @@ String getIPString(int type)
         return String() + prefs.getUChar(__PREF_MASK_1) + "." + prefs.getUChar(__PREF_MASK_2) + "." + prefs.getUChar(__PREF_MASK_3) + "." + prefs.getUChar(__PREF_MASK_4);
     case TYPE_GWAY: // gateway
         return String() + prefs.getUChar(__PREF_GATEWAY_1) + "." + prefs.getUChar(__PREF_GATEWAY_2) + "." + prefs.getUChar(__PREF_GATEWAY_3) + "." + prefs.getUChar(__PREF_GATEWAY_4);
-    case TYPE_DNS1: // DNS 1
-        return String() + prefs.getUChar(__PREF_DNS1_1) + "." + prefs.getUChar(__PREF_DNS1_2) + "." + prefs.getUChar(__PREF_DNS1_3) + "." + prefs.getUChar(__PREF_DNS1_4);
-    case TYPE_DNS2: // DNS 2;
-        return String() + prefs.getUChar(__PREF_DNS2_1) + "." + prefs.getUChar(__PREF_DNS2_2) + "." + prefs.getUChar(__PREF_DNS2_3) + "." + prefs.getUChar(__PREF_DNS2_4);
     default:
         return String() + "";
     }
@@ -193,19 +173,6 @@ IPAddress getDefaultGateway()
     return addr;
 }
 
-IPAddress getPrimaryDNS()
-{
-    IPAddress addr(prefs.getUChar(__PREF_DNS1_1), prefs.getUChar(__PREF_DNS1_2), prefs.getUChar(__PREF_DNS1_3), prefs.getUChar(__PREF_DNS1_4));
-    Serial.printf("PREFS: getPrimaryDNS() returns - %d.%d.%d.%d\n", addr[0], addr[1], addr[2], addr[3]);
-    return addr;
-}
-
-IPAddress getSecondaryDNS()
-{
-    IPAddress addr(prefs.getUChar(__PREF_DNS2_1), prefs.getUChar(__PREF_DNS2_2), prefs.getUChar(__PREF_DNS2_3), prefs.getUChar(__PREF_DNS2_4));
-    Serial.printf("PREFS: getSecondaryDNS() returns - %d.%d.%d.%d\n", addr[0], addr[1], addr[2], addr[3]);
-    return addr;
-}
 
 void getHostname(char hostname[__PREF_HOSTNAME_LEN])
 {
@@ -322,10 +289,6 @@ void resetToDefaults(bool reboot)
 
     // Gateway
     writeDefaultGateway(__DEF_GATEWAY);
-
-    // DNS
-    writePrimaryDNS(__DEF_DNS1);
-    writeSecondaryDNS(__DEF_DNS2);
 
     Serial.println("Resetting hostname");
 

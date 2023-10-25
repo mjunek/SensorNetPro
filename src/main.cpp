@@ -35,6 +35,7 @@ uint32_t uptime, prevPoll;
 int snmpTemperature[__MAX_SENSOR_COUNT], countSensors;
 bool eth_connected, dhcp_on, ap_on, wifi_on, isConfigured, resetNeeded, wifiConnected;
 bool statusLed = false;
+bool settingsRebootNeeded = false;
 
 char *sensorAddress[__MAX_SENSOR_COUNT], *sensorName[__MAX_SENSOR_COUNT];
 char *ch_httpAdminUser, *ch_httpAdminPass, *ch_systemHostname, *ch_wifiSSID, *ch_wpaPsk, *ch_snmpCommunity, *ch_snmpSysName, *ch_snmpLocation, *ch_snmpSysContact;
@@ -96,6 +97,7 @@ void loadPreferences(bool bypassInit)
   }
   dhcp_on = getDhcpMode();
   ap_on = getApMode();
+  wifi_on = getWifiEnabled();
   getSnmpCommunity(ch_snmpCommunity);
   getHttpUser(ch_httpAdminUser);
   getHostname(ch_systemHostname);
@@ -217,197 +219,6 @@ void updateSensorData()
   Serial.println();
 }
 
-void portalAction()
-{
-  // if (portal.click())
-  // {
-  //   Serial.println("Processing web click action");
-  //   if (portal.clickInt("dhcp", dhcp_on))
-  //   {
-  //     Serial.printf("Portal Change | DHCP | %d\n", dhcp_on);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickInt("wifiEnabled", wifi_on))
-  //   {
-  //     Serial.printf("Portal Change | Wifi On | %d\n", wifi_on);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickInt("ap", ap_on))
-  //   {
-  //     Serial.printf("Portal Change | Access Point Mode | %d\n", ap_on);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiHostname", uiHostname))
-  //   {
-  //     Serial.printf("Portal Change | Hostname | %s\n", uiHostname);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSSID", uiSSID))
-  //   {
-  //     Serial.printf("Portal Change | SSID | %s\n", uiSSID);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiWpaPsk", uiWpaPsk))
-  //   {
-  //     Serial.printf("Portal Change | WPA PSK | %s\n", uiWpaPsk);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiIPAddress", uiIPAddress))
-  //   {
-  //     Serial.printf("Portal Change | IP | %s\n", uiIPAddress);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSubnetMask", uiSubnetMask))
-  //   {
-  //     Serial.printf("Portal Change | Mask | %s\n", uiSubnetMask);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiGateway", uiGateway))
-  //   {
-  //     Serial.printf("Portal Change | Gateway | %s\n", uiGateway);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiPrimaryDNS", uiPrimaryDNS))
-  //   {
-  //     Serial.printf("Portal Change | PriDNS | %s\n", uiPrimaryDNS);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSecondaryDNS", uiSecondaryDNS))
-  //   {
-  //     Serial.printf("Portal Change | SecDNS | %s\n", uiSecondaryDNS);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSnmpCommunity", uiSnmpCommunity))
-  //   {
-  //     Serial.printf("Portal Change | SNMP Community | %s\n", uiSnmpCommunity);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSnmpContact", uiSnmpContact))
-  //   {
-  //     Serial.printf("Portal Change | SNMP Contact | %s\n", uiSnmpContact);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSystemName", uiSystemName))
-  //   {
-  //     Serial.printf("Portal Change | SNMP System Name | %s\n", uiSystemName);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiSnmpLocation", uiSnmpLocation))
-  //   {
-  //     Serial.printf("Portal Change | SNMP Location | %s\n", uiSnmpLocation);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiAdminUser", uiAdminUser))
-  //   {
-  //     Serial.printf("Portal Change | Admin User | %s\n", uiAdminUser);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (portal.clickString("uiAdminPass", uiAdminPass))
-  //   {
-  //     Serial.printf("Portal Change | Admin Pass | %s\n", uiAdminPass);
-  //     resetNeeded = resetNeeded || true;
-  //   }
-  //   if (resetNeeded)
-  //   {
-  //     Serial.println("Will reboot after saving changes");
-  //   }
-  //   if (portal.click("btnSnmp"))
-  //   {
-  //     Serial.println("Processing SNMP Save Button");
-
-  //     commitToPrefs(false);
-  //   }
-
-  //   if (portal.click("btnNetwork"))
-  //   {
-  //     Serial.println("Processing Network Save Button");
-
-  //     portal.update("ap");
-  //     portal.update("uiSSID");
-  //     portal.update("uiWpaPsk");
-  //     portal.update("uiHostname");
-  //     portal.update("dhcp");
-  //     portal.update("uiIPAddress");
-  //     portal.update("uiSubnetMask");
-  //     portal.update("uiGateway");
-  //     portal.update("uiPrimaryDNS");
-  //     portal.update("uiSecondaryDNS");
-
-  //     IPAddress ip;
-  //     ip.fromString(uiIPAddress);
-  //     IPAddress mask;
-  //     mask.fromString(uiSubnetMask);
-  //     IPAddress gw;
-  //     gw.fromString(uiGateway);
-  //     IPAddress dns1;
-  //     dns1.fromString(uiPrimaryDNS);
-  //     IPAddress dns2;
-  //     dns2.fromString(uiSecondaryDNS);
-
-  //     writeDhcpMode(dhcp_on);
-  //     writeApMode(ap_on);
-  //     writeHostname(uiHostname);
-  //     writeSSID(uiSSID);
-  //     writeWpaKey(uiWpaPsk);
-  //     writeIPAddress(ip[0], ip[1], ip[2], ip[3]);
-  //     writeSubnetMask(mask[0], mask[1], mask[2], mask[3]);
-  //     writeDefaultGateway(gw[0], gw[1], gw[2], gw[3]);
-  //     writePrimaryDNS(dns1[0], dns1[1], dns1[2], dns1[3]);
-  //     writeSecondaryDNS(dns2[0], dns2[1], dns2[2], dns2[3]);
-
-  //     commitToPrefs(resetNeeded);
-  //     resetNeeded = false;
-  //   }
-  //   if (portal.click("btnUser"))
-  //   {
-  //     Serial.println("Processing User Save Button");
-  //     writeHttpUser(uiAdminUser);
-  //     writeHttpPassword(uiAdminPass);
-  //     commitToPrefs(resetNeeded);
-  //     resetNeeded = false;
-  //   }
-  //   for (int i = 0; i < countSensors; i++)
-  //   {
-  //     String textBoxName = "txtSens" + String(sensorAddress[i]);
-  //     const char *tbName = textBoxName.c_str();
-  //     String newFriendlyName;
-  //     if (portal.clickString(textBoxName, newFriendlyName))
-  //     {
-  //       const char *deviceName;
-  //       if (newFriendlyName == "")
-  //       {
-  //         deviceName = sensorAddress[i];
-  //       }
-  //       else
-  //       {
-  //         deviceName = newFriendlyName.c_str();
-  //       }
-  //       Serial.printf("CLICKSTRING - Got %s from text box %s\n", deviceName, tbName);
-  //       strcpy(sensorName[i], deviceName);
-  //     }
-  //   }
-
-  //   getSnmpContact(ch_snmpSysContact);
-  //   getSnmpSysName(ch_snmpSysName);
-  //   getSnmpLocation(ch_snmpLocation);
-
-  //   if (portal.click("btnSensors"))
-  //   {
-  //     Serial.println("Processing Sensor Save Button");
-  //     for (int i = 0; i < countSensors; i++)
-  //     {
-  //       Serial.printf("SAVEBUTTON Updating sensor %s to name %s\n", sensorAddress[i], sensorName[i]);
-  //       writeFriendlyName(sensorName[i], sensorAddress[i]);
-  //       updateSensorName(sensorName[i], i);
-  //     }
-  //     completeSnmpSetup();
-  //   }
-
-  //   getHttpUser(ch_httpAdminUser);
-  //   getHttpPassword(ch_httpAdminPass);
-  // }
-}
-
 void apiReboot(String *responseString, JsonObject *jsonRequest)
 {
   DynamicJsonDocument jsonDoc(2048);
@@ -453,8 +264,6 @@ void apiSystemStats(String *responseString, JsonObject *jsonRequest)
   String configuredIP = getIPString(TYPE_ADDR);
   String configuredMask = getIPString(TYPE_MASK);
   String configuredGateway = getIPString(TYPE_GWAY);
-  String configuredPrimaryDNS = getIPString(TYPE_DNS1);
-  String configuredSecondaryDNS = getIPString(TYPE_DNS2);
 
   String RSSI = String() + WiFi.RSSI() + " dB";
   String hostname = String(ch_systemHostname);
@@ -500,8 +309,6 @@ void apiGetConfiguration(DynamicJsonDocument *jsonDoc, bool network, bool snmp, 
     (*jsonDoc)["networkIP"] = getIPString(TYPE_ADDR);
     (*jsonDoc)["networkMask"] = getIPString(TYPE_MASK);
     (*jsonDoc)["networkGateway"] = getIPString(TYPE_GWAY);
-    (*jsonDoc)["networkPriDNS"] = getIPString(TYPE_DNS1);
-    (*jsonDoc)["networkSecDNS"] = getIPString(TYPE_DNS2);
     (*jsonDoc)["networkSSID"] = ch_wifiSSID;
   }
   if (admin)
@@ -562,6 +369,65 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
 
 void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest)
 {
+  DynamicJsonDocument jsonDoc(2048);
+  jsonDoc["error"] = false;
+  jsonDoc["errorMessage"] = "Success";
+
+  if (
+      not(*jsonRequest)["networkHostname"].is<String>() || not(*jsonRequest)["networkIP"].is<String>() || not(*jsonRequest)["networkMask"].is<String>() || not(*jsonRequest)["networkGateway"].is<String>() || not(*jsonRequest)["networkSSID"].is<String>() || not(*jsonRequest)["networkWpaKey"].is<String>() || not(*jsonRequest)["networkWifi"].is<bool>() || not(*jsonRequest)["networkApMode"].is<bool>() || not(*jsonRequest)["networkDhcp"].is<bool>() || not(*jsonRequest)["modifyWpaKey"].is<bool>())
+  {
+    jsonDoc["error"] = true;
+    jsonDoc["errorMessage"] = "Invalid request, not all parameters supplied.";
+    serializeJson(jsonDoc, *responseString);
+    return;
+  }
+  bool modifyWpaKey = (*jsonRequest)["modifyWpaKey"].as<bool>();
+  bool networkWifi = (*jsonRequest)["networkWifi"].as<bool>();
+  bool networkDhcp = (*jsonRequest)["networkDhcp"].as<bool>();
+  bool networkApMode = (*jsonRequest)["networkApMode"].as<bool>();
+  String networkHostname = (*jsonRequest)["networkHostname"].as<String>();
+  String networkIP = (*jsonRequest)["networkIP"].as<String>();
+  String networkMask = (*jsonRequest)["networkMask"].as<String>();
+  String networkGateway = (*jsonRequest)["networkGateway"].as<String>();
+  String networkSSID = (*jsonRequest)["networkSSID"].as<String>();
+  String networkWpaKey = (*jsonRequest)["networkWpaKey"].as<String>();
+
+  if ((!networkDhcp && (networkIP == "" || networkMask == "" || networkGateway == "")) || networkWifi && (networkSSID == ""))
+  {
+    jsonDoc["error"] = true;
+    jsonDoc["errorMessage"] = "Invalid request, not all parameters supplied.";
+    serializeJson(jsonDoc, *responseString);
+    return;
+  }
+
+  if (modifyWpaKey)
+  {
+    writeWpaKey(networkWpaKey);
+  }
+  writeApMode(networkApMode);
+  writeDhcpMode(networkDhcp);
+  writeHostname(networkHostname);
+  writeSSID(networkSSID);
+  writeWirelesEnabled(networkWifi);
+
+  IPAddress ip;
+  ip.fromString(networkIP);
+  writeIPAddress(ip[0], ip[1], ip[2], ip[3]);
+
+  IPAddress mask;
+  mask.fromString(networkMask);
+  writeSubnetMask(mask[0], mask[1], mask[2], mask[3]);
+
+  IPAddress gw;
+  gw.fromString(networkGateway);
+  writeDefaultGateway(gw[0], gw[1], gw[2], gw[3]);
+
+  commitToPrefs(false);
+  loadPreferences(true);
+  apiGetConfiguration(&jsonDoc, true, false, false);
+  jsonDoc["restartRequired"] = true;
+   settingsRebootNeeded = true;
+  serializeJson(jsonDoc, *responseString);
 }
 
 void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
@@ -609,11 +475,11 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
   commitToPrefs(false);
 
   jsonDoc["restartRequired"] = true;
+  settingsRebootNeeded = true;
   loadPreferences(true);
   completeSnmpSetup();
 
   apiGetConfiguration(&jsonDoc, false, true, false);
-  serializeJson(jsonDoc, *responseString);
   serializeJson(jsonDoc, *responseString);
 }
 
@@ -810,7 +676,6 @@ void setup()
   loadPreferences(false);
 
   WiFi.onEvent(WiFiEvent);
-  wifi_on = getWifiEnabled();
   if (wifi_on)
   {
     Serial.println("Setting up Wi-Fi");
@@ -842,10 +707,10 @@ void setup()
     Serial.println("Not using DHCP");
     Serial.println("Setting IP parameters");
     if (wifi_on)
-      WiFi.config(getIPAddress(), getDefaultGateway(), getSubnetMask(), getPrimaryDNS(), getSecondaryDNS());
-    ETH.config(getIPAddress(), getDefaultGateway(), getSubnetMask(), getPrimaryDNS(), getSecondaryDNS());
-    Serial.printf("Config > IP: %s | Mask: %s | Gateway: %s | DNS1: %s | DNS2: %s\n", getIPString(TYPE_ADDR),
-                  getIPString(TYPE_ADDR), getIPString(TYPE_MASK), getIPString(TYPE_GWAY), getIPString(TYPE_DNS1), getIPString(TYPE_DNS2));
+      WiFi.config(getIPAddress(), getDefaultGateway(), getSubnetMask());
+    ETH.config(getIPAddress(), getDefaultGateway(), getSubnetMask());
+    Serial.printf("Config > IP: %s | Mask: %s | Gateway: %s\n", getIPString(TYPE_ADDR),
+                  getIPString(TYPE_ADDR), getIPString(TYPE_MASK), getIPString(TYPE_GWAY));
   }
   int count = 0;
 
@@ -916,6 +781,13 @@ void loop()
   {
     updateSensorData();
     prevPoll = uptime;
+
+    if (wifi_on && !ap_on && !settingsRebootNeeded && (WiFi.status() != WL_CONNECTED))
+    {
+      Serial.println("Reconnecting to WiFi...");
+      WiFi.disconnect();
+      WiFi.reconnect();
+    }
   }
   bool status = ((uptime / 50) % 2 == 1);
   if (statusLed != status)
