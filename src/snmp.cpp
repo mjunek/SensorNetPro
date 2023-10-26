@@ -87,7 +87,7 @@ void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperat
     Serial.printf("++ (%s) >> Serial OID:       %s\n", sensorSerial, ch_oid_deviceSerial);
     Serial.printf("++ (%s) >> Temperature OID:  %s\n", sensorSerial, ch_oid_temp);
 
-    snmp.addReadOnlyIntegerHandler(ch_oid_deviceIndex, sensorCount);
+    snmp.addReadOnlyIntegerHandler(ch_oid_deviceIndex, index);
     nameOid[sensNum] = snmp.addReadOnlyStaticStringHandler(ch_oid_deviceName, sensorName, 40);
     snmp.addReadOnlyStaticStringHandler(ch_oid_deviceSerial, sensorSerial, 40);
     snmp.addIntegerHandler(ch_oid_temp, &temperatureValue[sensNum]);
