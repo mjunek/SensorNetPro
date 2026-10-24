@@ -117,7 +117,13 @@ Mask these values or remove the logging.
 
 With Wi-Fi in station mode and Ethernet not up within 60 s, the device reboots every minute (`src/main.cpp:787-799`). It can never be reached to fix the configuration. **Fix:** fall back to AP mode, or keep running without Wi-Fi.
 
-### 10. Static IP is applied to both interfaces
+### 10. ✅ Static IP is applied to both interfaces
+> **Fixed (Ethernet only):** the DHCP/static IP settings now apply to Ethernet only.
+> - Wi-Fi station mode always uses DHCP.
+> - The AP, whether configured or the fallback from item 9, always uses the soft-AP default of 192.168.4.1/24.
+> - No settings, NVS keys or API fields changed. The Network tab and the status page now label these settings as Ethernet.
+> - **Watch out:** the factory static defaults (`__DEF_IPADDR`, `__DEF_GATEWAY` = 192.168.4.1) are in the AP's subnet. They are only used when DHCP is turned off, but they should be edited before switching Ethernet to static.
+
 When DHCP is off, `WiFi.config()` and `ETH.config()` are given the same IP, mask and gateway (`src/main.cpp:776-778`). This causes an address conflict and broken routing whenever both interfaces are up.
 
 AP mode has a related problem. `WiFi.config()` sets the station interface, not the soft-AP, so the configured address is ignored in AP mode. That would need `softAPConfig()`. Network settings probably need to be set per interface, for example Ethernet static/DHCP plus AP on a fixed `192.168.4.1`.

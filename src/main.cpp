@@ -845,12 +845,12 @@ void setup()
   Serial.println("Starting ethernet");
   ETH.begin();
 
+  // The static IP settings belong to Ethernet only. WiFi station mode always uses DHCP,
+  // and the AP (configured or fallback) uses the soft-AP default of 192.168.4.1/24.
   if (dhcp_on == 0)
   {
-    Serial.println("Not using DHCP");
-    Serial.println("Setting IP parameters");
-    if (wifi_on)
-      WiFi.config(getIPAddress(), getDefaultGateway(), getSubnetMask());
+    Serial.println("Not using DHCP on Ethernet");
+    Serial.println("Setting Ethernet IP parameters");
     ETH.config(getIPAddress(), getDefaultGateway(), getSubnetMask());
     Serial.printf("Config > IP: %s | Mask: %s | Gateway: %s\n", getIPString(TYPE_ADDR).c_str(),
                   getIPString(TYPE_MASK).c_str(), getIPString(TYPE_GWAY).c_str());
