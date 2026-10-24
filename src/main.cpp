@@ -27,7 +27,6 @@
 #include <ArduinoJson.h>       // JSON Support for Program
 #include <ESPmDNS.h>           // MDNS Responder
 
-#include "ethsettings.h" // Ethernet settings
 #include "prefs.h"       // Preferences Lib
 #include "snmp.h"        // SNMP Lib
 
@@ -947,7 +946,10 @@ void setup()
   }
 
   Serial.println("Starting ethernet");
-  ETH.begin();
+  // PHY settings come from the board variant. Passing them explicitly means a board without
+  // them fails to compile, rather than silently using the library defaults.
+  if (!ETH.begin(ETH_PHY_TYPE, ETH_PHY_ADDR, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_POWER, ETH_CLK_MODE))
+    Serial.println("Ethernet failed to start");
 
   // The static IP settings belong to Ethernet only. WiFi station mode always uses DHCP,
   // and the AP (configured or fallback) uses the soft-AP default of 192.168.4.1/24.

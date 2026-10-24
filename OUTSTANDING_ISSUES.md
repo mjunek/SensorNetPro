@@ -192,7 +192,17 @@ It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT I
 > - **Leak on rename:** `updateThermalSensorName()` leaked one `ValueCallback` per rename, because `removeHandler()` doesn't free it. It now deletes the old callback. `ValueCallback`'s destructor isn't virtual, so the delete goes through the concrete `ReadOnlyStringCallback` type. The state mutex (item 5) is held during the delete, so `snmp.loop()` can't be using it.
 > - **Rename of a skipped sensor:** a sensor that got no SNMP index at boot used to register a name OID at index 0 when renamed. It is now skipped.
 
-#### 16. Ethernet pin definitions are not used
+#### 16. ✅ Ethernet pin definitions are not used
+> **Fixed:**
+> - **Removed `ethsettings.h`.** Each board variant already defines the PHY settings.
+> - **`ETH.begin()` is called with the variant's PHY macros explicitly**, so a board that lacks them fails at compile time instead of using library defaults. The result is also checked and logged.
+> - **`platformio.ini` has a shared `[env]` section and one environment per board.** `esp32poe` is the default.
+> - **New `[env:wt32-eth01]` environment.** Ethernet uses the variant's settings: LAN8720 at address 1, power on GPIO16, clock in on GPIO0. The pin map is **provisional** until the PCB exists:
+>   - `ONE_WIRE_BUS=4`
+>   - `KEY_RESET=39`. This pin is input-only and needs an external pull-up and button.
+>   - `STATUS_LED=2`, `ERROR_LED=14`, `WIFI_LED=15`
+> - Both environments build. WT32-ETH01 has not been tested on hardware.
+
 > **Update (v3 migration):** on Arduino-ESP32 v3, the no-argument `ETH.begin()` takes `ETH_PHY_TYPE`, `ETH_PHY_ADDR`, `ETH_PHY_MDC`, `ETH_PHY_MDIO`, `ETH_PHY_POWER` and `ETH_CLK_MODE` from the board variant. The `esp32-poe` variant defines all of them correctly. It also selects GPIO0 for the clock when PSRAM is enabled. `ethsettings.h` is still redundant, and WT32-ETH01 still needs its own environment.
 
 `include/ethsettings.h` is included **after** `<ETH.h>`, so `ETH.begin()` uses the board variant's defaults. It also uses `ETH_TYPE` where the library expects `ETH_PHY_TYPE`. This works on `esp32-poe` only because that board variant has the correct pins.

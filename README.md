@@ -34,5 +34,9 @@ Copyright © 2023 Michael Junek.
 ## Building ##
 Please see the BUILDING.md file (not yet written)
 
+Each supported board has its own PlatformIO environment. `esp32poe` is the default:
+* Olimex ESP32-POE: ```pio run -e esp32poe```
+* WT32-ETH01: ```pio run -e wt32-eth01``` (provisional pin map, see ```platformio.ini```)
+
 ## Updates ##
 _Update 2023-Oct-10:_ Initial commit to repository is NOT YET complete. There is some seriously broken code in here.
