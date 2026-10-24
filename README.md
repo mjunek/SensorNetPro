@@ -9,6 +9,7 @@ The system is based on the Olimex ESP32-POE ESP32 module, or alternatively the W
 These both supply a hard-wired connection into the monitoring/management network where WiFi is not usually employed. The system does have the option for WiFi configuration, which is also used for initial setup.
 
 The button is used to reset the settings. Pressing this button and holding it for 5 seconds at power on will reset the settings to default.
+While the device is running, holding the button for 5 seconds reboots it (the error LED flashes while the button is held), and shorter presses are ignored. A reboot started this way, or from the web UI, never triggers the factory reset, even if the button is still held as the device restarts.
 The default mode is set automatically on first boot within the Preferences librbary.
 
 The platform supports the Dallas 1-wire DS18B20 sensor set (https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf)

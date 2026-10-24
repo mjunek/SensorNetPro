@@ -217,7 +217,12 @@ The README also promises WT32-ETH01 support, but there is no environment or pin 
 
 `STATUS_LED` and `ERROR_LED` are both on GPIO15 (`platformio.ini`), so the error and status indications overwrite each other. The heartbeat in `loop()` also overwrites the error LED state. Assign separate pins once the PCB is designed.
 
-#### 18. The reset button reboots during normal operation
+#### 18. ✅ The reset button reboots during normal operation
+> **Fixed:**
+> - **Deliberate hold:** a runtime reboot now needs a hold of `RUNTIME_REBOOT_HOLD_TIME` (5 s). It is timed with `millis()` and doesn't block, so SNMP and the web server keep running. The error LED flashes while the button is held, and releasing it early cancels.
+> - **No accidental factory reset:** the boot-time factory reset is now skipped after a software restart (`esp_reset_reason() == ESP_RST_SW`). Holding the button through the reboot it triggers therefore can't wipe the settings. A power cycle or a hardware reset with the button held still works.
+> - **Documented:** the README describes both behaviours.
+
 Pressing the button for 1 s at runtime reboots the device (`src/main.cpp:866-875`). This is undocumented, and an accidental press in a rack will drop monitoring.
 
 #### 19. ✅ Dependencies are not pinned

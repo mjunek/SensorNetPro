@@ -35,6 +35,7 @@ int snmpTemperature[__MAX_SENSOR_COUNT], snmpSensorStatus[__MAX_SENSOR_COUNT], c
 bool eth_connected, dhcp_on, ap_on, wifi_on, isConfigured, resetNeeded, wifiConnected;
 bool statusLed = false;
 bool settingsRebootNeeded = false;
+uint32_t buttonPressedAt = 0; // millis() when the current runtime button press started, 0 if not pressed
 bool fallbackApActive = false;
 char fallbackSsid[__PREF_SSID_LEN];
 uint32_t lastWifiRetry = 0;
@@ -82,7 +83,13 @@ void loadPreferences(bool bypassInit)
     isConfigured = getConfigured();
 
     delay(200);
-    if (digitalRead(KEY_RESET) == 0)
+    // Only a power-on or hardware reset can start a factory reset. A software restart (web UI or
+    // the runtime button hold) never does, even if the button is still held as it reboots.
+    if (digitalRead(KEY_RESET) == 0 && esp_reset_reason() == ESP_RST_SW)
+    {
+      Serial.println("Button held after a software restart. Ignoring it, not resetting settings");
+    }
+    else if (digitalRead(KEY_RESET) == 0)
     {
       digitalWrite(STATUS_LED, 0);
       digitalWrite(ERROR_LED, 0);
@@ -1050,14 +1057,28 @@ void loop()
     digitalWrite(STATUS_LED, statusLed);
   }
 
+  // Runtime button: a deliberate hold of RUNTIME_REBOOT_HOLD_TIME reboots, and shorter presses are
+  // ignored. Timed without blocking so SNMP keeps answering. The error LED flashes while held.
   if (digitalRead(KEY_RESET) == 0)
   {
-    Serial.println("Reset pressed, waiting");
-    delay(1000);
-    if (digitalRead(KEY_RESET) == 0)
+    uint32_t now = millis();
+    if (buttonPressedAt == 0)
     {
-      Serial.println("Reset pressed, rebooting ESP");
+      buttonPressedAt = now | 1; // never 0 while pressed
+      Serial.printf("Button pressed, hold for %d seconds to reboot\n", RUNTIME_REBOOT_HOLD_TIME);
+    }
+    digitalWrite(ERROR_LED, (now / 125) % 2);
+    if (now - buttonPressedAt >= RUNTIME_REBOOT_HOLD_TIME * 1000)
+    {
+      Serial.println("Button held, rebooting ESP");
+      digitalWrite(ERROR_LED, 1);
       ESP.restart();
     }
+  }
+  else if (buttonPressedAt != 0)
+  {
+    Serial.println("Button released, not rebooting");
+    buttonPressedAt = 0;
+    digitalWrite(ERROR_LED, 0);
   }
 }
