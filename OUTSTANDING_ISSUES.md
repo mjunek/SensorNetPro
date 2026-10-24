@@ -47,7 +47,9 @@ This corrupts memory or crashes the device. **Fix:** clamp `countSensors` to `__
 
 **Fix:** read with `getTempC(sensorsUnique[i])`. Detect failed reads and report them in a defined way, for example by not answering, using a sentinel value, or adding a status column.
 
-### 4. `printf("%s")` is given Arduino `String` objects (undefined behaviour)
+### 4. ✅ `printf("%s")` is given Arduino `String` objects (undefined behaviour)
+> **Fixed:** all `String` arguments to `printf` now go through `.c_str()`. The `Config > IP` line now has the correct three arguments. The `SysDescr` format bug (item 14) was fixed at the same time.
+
 A `String` object is passed where a `char*` is expected. This prints garbage and can crash the device. Affected code:
 - Every `write*()` setter that takes a `String`: `src/prefs.cpp:62-108`
 - `Serial.printf("Handling JSON action %s\n", webAction)`: `src/main.cpp:587`
@@ -116,7 +118,9 @@ The UI also never shows the server's `errorMessage`.
 #### 13. `sysObjectID` is registered with the wrong type
 It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT IDENTIFIER (`addOIDHandler`).
 
-#### 14. SysDescr serial format
+#### 14. ✅ SysDescr serial format
+> **Fixed** together with item 4: the value is now cast to `unsigned long long` and printed with `%llx`.
+
 `ESP.getEfuseMac()` returns a `uint64_t`, but it is formatted with `%x` (`src/snmp.cpp:54`). Use `%llx`.
 
 #### 15. SNMP_Agent API usage needs checking **(verify)**

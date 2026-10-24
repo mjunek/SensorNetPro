@@ -51,7 +51,7 @@ void initialiseSnmp(char* ch_snmpCommunity, uint32_t *uptime, char *ch_snmpSysCo
     snmp.setReadWriteCommunity(n);
     Serial.println("Setting SNMP mib-2 system attributes");
     char *SysDescr = (char *)malloc(100);
-    sprintf(SysDescr, "SensorNetPro v%s HW:%s@%d SN:%x", __FIRMWARE_VERSION, ESP.getChipModel(), ESP.getChipRevision(), ESP.getEfuseMac());
+    sprintf(SysDescr, "SensorNetPro v%s HW:%s@%d SN:%llx", __FIRMWARE_VERSION, ESP.getChipModel(), ESP.getChipRevision(), (unsigned long long)ESP.getEfuseMac());
     snmp.addReadOnlyStaticStringHandler(oidSysDescr, SysDescr);
     free(SysDescr);
     snmp.addReadOnlyStaticStringHandler(oidSysObjectID, sysObject);

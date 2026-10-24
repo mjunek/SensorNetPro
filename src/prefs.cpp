@@ -59,53 +59,53 @@ void writeDefaultGateway(int octet1, int octet2, int octet3, int octet4)
 void writeHostname(String hostname)
 {
     prefs.putString(__PREF_HOSTNAME, hostname);
-    Serial.printf("PREFS: writeHostname complete - %s\n", hostname);
+    Serial.printf("PREFS: writeHostname complete - %s\n", hostname.c_str());
 }
 void writeSSID(String ssid)
 {
     prefs.putString(__PREF_SSID, ssid);
-    Serial.printf("PREFS: writeSSID complete - %s\n", ssid);
+    Serial.printf("PREFS: writeSSID complete - %s\n", ssid.c_str());
 }
 void writeWpaKey(String wpaKey)
 {
     prefs.putString(__PREF_WPA_KEY, wpaKey);
-    Serial.printf("PREFS: writeWpaKey complete - %s\n", wpaKey);
+    Serial.printf("PREFS: writeWpaKey complete - %s\n", wpaKey.c_str());
 }
 
 void writeSnmpCommunity(String community)
 {
     prefs.putString(__PREF_COMMUNITY, community);
-    Serial.printf("PREFS: writeSnmpCommunity complete - %s\n", community);
+    Serial.printf("PREFS: writeSnmpCommunity complete - %s\n", community.c_str());
 }
 
 void writeSnmpContact(String contact)
 {
     prefs.putString(__PREF_SNMP_SYSCONTACT, contact);
-    Serial.printf("PREFS: writeSnmpContact complete - %s\n", contact);
+    Serial.printf("PREFS: writeSnmpContact complete - %s\n", contact.c_str());
 }
 
 void writeSnmpSysName(String sysName)
 {
     prefs.putString(__PREF_SNMP_SYSNAME, sysName);
-    Serial.printf("PREFS: writeSnmpSysName complete - %s\n", sysName);
+    Serial.printf("PREFS: writeSnmpSysName complete - %s\n", sysName.c_str());
 }
 
 void writeSnmpLocation(String location)
 {
     prefs.putString(__PREF_SNMP_SYSLOCATION, location);
-    Serial.printf("PREFS: writeSnmpLocation complete - %s\n", location);
+    Serial.printf("PREFS: writeSnmpLocation complete - %s\n", location.c_str());
 }
 
 void writeHttpUser(String login)
 {
     prefs.putString(__PREF_ADMIN_USER, login);
-    Serial.printf("PREFS: writeHttpUser complete - %s\n", login);
+    Serial.printf("PREFS: writeHttpUser complete - %s\n", login.c_str());
 }
 
 void writeHttpPassword(String password)
 {
     prefs.putString(__PREF_ADMIN_PASS, password);
-    Serial.printf("PREFS: writeHttpPassword complete - %s\n", password);
+    Serial.printf("PREFS: writeHttpPassword complete - %s\n", password.c_str());
 }
 
 void writeDhcpMode(bool dhcpMode)

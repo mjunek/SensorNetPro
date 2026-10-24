@@ -594,7 +594,7 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
   String webAction = reqData["webAction"].as<String>();
   String *jsonResponse = new String();
 
-  Serial.printf("Handling JSON action %s\n", webAction);
+  Serial.printf("Handling JSON action %s\n", webAction.c_str());
   if (webAction == "reboot")
   {
     Serial.println("Processing Reboot Request");
@@ -786,8 +786,8 @@ void setup()
     if (wifi_on)
       WiFi.config(getIPAddress(), getDefaultGateway(), getSubnetMask());
     ETH.config(getIPAddress(), getDefaultGateway(), getSubnetMask());
-    Serial.printf("Config > IP: %s | Mask: %s | Gateway: %s\n", getIPString(TYPE_ADDR),
-                  getIPString(TYPE_ADDR), getIPString(TYPE_MASK), getIPString(TYPE_GWAY));
+    Serial.printf("Config > IP: %s | Mask: %s | Gateway: %s\n", getIPString(TYPE_ADDR).c_str(),
+                  getIPString(TYPE_MASK).c_str(), getIPString(TYPE_GWAY).c_str());
   }
   int count = 0;
 
