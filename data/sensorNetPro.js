@@ -3,6 +3,7 @@
 let ajaxBase = "/json-api";
 let currentSection;
 let statusRefreshTimer;
+let statusErrorShown = false;
 let config;
 let passwordChangeRequired = false;
 const sectionFields = new Object();
@@ -18,6 +19,23 @@ sectionFields.network = [
   "networkSSID",
 ];
 sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
+
+// Refresh errors are reported through the status banner below, not DataTables' alert() popups
+$.fn.dataTable.ext.errMode = "none";
+
+// Keep polling while the device is unreachable, with a banner that clears once it answers again
+function showStatusError() {
+  statusErrorShown = true;
+  $("#jsErrorText").text("Lost contact with the device. Retrying...");
+  $("#jsError").show();
+}
+
+function clearStatusError() {
+  if (statusErrorShown) {
+    statusErrorShown = false;
+    $("#jsError").hide();
+  }
+}
 
 // Sensor names and serials come from the device and are inserted into HTML, so escape them
 function escapeHtml(value) {
@@ -59,6 +77,9 @@ let thermalSensorTable = $("#thermalSensorTable").DataTable({
     { data: "name" },
     { data: "reading" },
   ],
+  drawCallback: function () {
+    clearStatusError();
+  },
   columnDefs: [
     { targets: 0, data: "id", visible: false },
     {
@@ -75,6 +96,10 @@ let thermalSensorTable = $("#thermalSensorTable").DataTable({
       },
     },
   ],
+});
+
+thermalSensorTable.on("error.dt", function () {
+  showStatusError();
 });
 
 let thermalSensorConfigTable = $("#thermalSensorConfigTable").DataTable({
@@ -149,6 +174,7 @@ function updateSystemInfo() {
     timeout: 10000,
     data: JSON.stringify(reqData),
     success: function (responseData) {
+      clearStatusError();
       $("#hostname_status_text").text(responseData.hostname);
       $("#version_text").text(responseData.version);
       $("#uptime_text").text(responseData.uptime);
@@ -254,14 +280,7 @@ function updateSystemInfo() {
       }
     },
     error: function (error) {
-      clearInterval(statusRefreshTimer);
-      $("#jsErrorText").text(
-        "There was an error refreshing the status information."
-      );
-      $("#jsError").show();
-      setTimeout(() => {
-        $("#jsError").hide();
-      }, 5000);
+      showStatusError();
     },
   });
 }

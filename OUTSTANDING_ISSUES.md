@@ -269,7 +269,12 @@ Sensor names and serials are concatenated into HTML without escaping (`data/sens
 
 `dhcpModeValue`, `wifiModeValue` and the loop variable `i` are implicit globals (`data/sensorNetPro.js:336,560,649,729`). If no radio button is checked, `validateIpSettings()` throws a `ReferenceError`.
 
-#### 23. Status refresh stops permanently after one error
+#### 23. ✅ Status refresh stops permanently after one error
+> **Fixed:**
+> - **Polling continues through errors.** While the device is unreachable, a "Lost contact with the device. Retrying..." banner stays up. The next successful status or table refresh clears it.
+> - **Popups suppressed.** Table refresh errors used DataTables' default `alert()` error mode, which would pop up every 10 s during an outage. `errMode` is now `none`, and table errors go to the same banner.
+> - **Testing:** the UI test runs a simulated outage and recovery. The old code fails it, and the fixed code passes.
+
 A single failed status poll clears the interval for good (`data/sensorNetPro.js:225`). The dashboard stops updating until the page is reloaded.
 
 ---
