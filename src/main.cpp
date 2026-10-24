@@ -907,15 +907,13 @@ void setup()
     digitalWrite(WIFI_LED, 0);
     digitalWrite(ERROR_LED, 1);
     digitalWrite(STATUS_LED, 0);
+    // Blink the error LED forever. uptime isn't updated until loop(), so time this with delay()
     bool errorLed = true;
     while (true)
     {
-      bool status = ((uptime / 50) % 2 == 1);
-      if (errorLed != status)
-      {
-        errorLed = status;
-        digitalWrite(ERROR_LED, errorLed);
-      }
+      delay(500);
+      errorLed = !errorLed;
+      digitalWrite(ERROR_LED, errorLed);
     }
   }
 

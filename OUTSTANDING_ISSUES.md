@@ -209,7 +209,12 @@ It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT I
 
 The README also promises WT32-ETH01 support, but there is no environment or pin set for it. **Fix:** add a `[env:wt32-eth01]` and pass the PHY settings to `ETH.begin()` explicitly.
 
-#### 17. LED pins
+#### 17. ✅ LED pins
+> **Fixed:**
+> - **Separate pins on the ESP32-POE:** `ERROR_LED` is now GPIO14, `STATUS_LED` stays on GPIO15, and `WIFI_LED` stays on GPIO16. The `loop()` heartbeat only drives `STATUS_LED`, so the two indications no longer overwrite each other.
+> - **Filesystem-failure blink:** the "filesystem failed" error loop timed its blink from `uptime`, which never advances before `loop()`. The error LED went off on the first pass and stayed off. It now blinks with `delay()`.
+> - WT32-ETH01 uses the separate pins from item 16.
+
 `STATUS_LED` and `ERROR_LED` are both on GPIO15 (`platformio.ini`), so the error and status indications overwrite each other. The heartbeat in `loop()` also overwrites the error LED state. Assign separate pins once the PCB is designed.
 
 #### 18. The reset button reboots during normal operation
