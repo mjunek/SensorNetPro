@@ -37,6 +37,7 @@ bool statusLed = false;
 bool settingsRebootNeeded = false;
 uint32_t buttonPressedAt = 0; // millis() when the current runtime button press started, 0 if not pressed
 uint32_t rebootRequestedAt = 0; // millis() when a reboot was requested from the web UI, 0 if not requested
+uint32_t conversionStartedAt = 0; // millis() when a sensor conversion was started, 0 if none is pending
 bool fallbackApActive = false;
 char fallbackSsid[__PREF_SSID_LEN];
 uint32_t lastWifiRetry = 0;
@@ -236,16 +237,21 @@ void WiFiEvent(WiFiEvent_t event)
   digitalWrite(WIFI_LED, (wifiConnected || eth_connected));
 }
 
+// Start a temperature conversion on all sensors. It runs in the background (setWaitForConversion(false)),
+// and loop() collects the results with updateSensorData() once the conversion time has passed.
+void requestSensorData()
+{
+  Serial.println("Requesting sensor data");
+  sensors.requestTemperatures();
+  conversionStartedAt = millis() | 1; // never 0 while pending
+}
+
 void updateSensorData()
 {
   float temperaturec[__MAX_SENSOR_COUNT];
 
-  Serial.print("Requesting sensor data...");
-  sensors.requestTemperatures();
-  while (!sensors.isConversionComplete())
-  {
-  };
-  Serial.println("done, getting values");
+  conversionStartedAt = 0;
+  Serial.print("Sensor data: ");
   StateLock lock;
   for (int i = 0; i < countSensors; i++)
   {
@@ -987,6 +993,7 @@ void setup()
   Serial.println("Starting Dallas 1-wire interface");
   sensors.begin();
   sensors.setResolution(__DS18B20_RESOLUTION);
+  sensors.setWaitForConversion(false);
   countSensors = sensors.getDeviceCount();
   Serial.println("Found " + String(countSensors) + " sensors");
   if (countSensors > __MAX_SENSOR_COUNT)
@@ -1039,7 +1046,7 @@ void loop()
   uptime = esp_timer_get_time() / 10000;
   if (prevPoll == 0 || prevPoll + (SENSOR_TIME * 100) <= uptime)
   {
-    updateSensorData();
+    requestSensorData();
     prevPoll = uptime;
 
     if (wifi_on && !ap_on && !settingsRebootNeeded && (WiFi.status() != WL_CONNECTED) &&
@@ -1051,6 +1058,11 @@ void loop()
       WiFi.reconnect();
     }
   }
+  if (conversionStartedAt != 0 && millis() - conversionStartedAt >= sensors.millisToWaitForConversion())
+  {
+    updateSensorData();
+  }
+
   if (rebootRequestedAt != 0 && millis() - rebootRequestedAt >= 1000)
   {
     Serial.println("Rebooting ESP as requested");
