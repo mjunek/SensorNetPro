@@ -171,6 +171,8 @@ bool getApMode();
 bool getWifiEnabled();
 String getIPString(int type);
 
+const char *maskSecret(const char *secret);
+
 void resetToDefaults(bool reboot);
 void initPreferences();
 void commitToPrefs(bool reboot);

@@ -99,7 +99,9 @@ The device starts as an **open** Wi-Fi AP (empty WPA key), with web login `admin
 - Force a password change on first login.
 - Turn the AP off once Ethernet is configured.
 
-### 8. Secrets are written to the serial console
+### 8. ✅ Secrets are written to the serial console
+> **Fixed:** the WPA key, admin password and SNMP community are now logged through `maskSecret()` (`src/prefs.cpp`). It prints `<set>` or `<empty>`, so the console still shows whether the AP is open, but not the value.
+
 These are printed in clear text:
 - WPA key: `getWpaKey`, `writeWpaKey`, `src/main.cpp:751,759`
 - Admin password: `getHttpPassword`, `writeHttpPassword`

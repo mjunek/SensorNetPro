@@ -17,6 +17,13 @@
  */
 
 #include "prefs.h"
+
+// Secrets are never written to the serial log; only whether one is set
+const char *maskSecret(const char *secret)
+{
+    return (secret != nullptr && secret[0] != '\0') ? "<set>" : "<empty>";
+}
+
 /*
  *
  * SETTERS
@@ -69,13 +76,13 @@ void writeSSID(String ssid)
 void writeWpaKey(String wpaKey)
 {
     prefs.putString(__PREF_WPA_KEY, wpaKey);
-    Serial.printf("PREFS: writeWpaKey complete - %s\n", wpaKey.c_str());
+    Serial.printf("PREFS: writeWpaKey complete - %s\n", maskSecret(wpaKey.c_str()));
 }
 
 void writeSnmpCommunity(String community)
 {
     prefs.putString(__PREF_COMMUNITY, community);
-    Serial.printf("PREFS: writeSnmpCommunity complete - %s\n", community.c_str());
+    Serial.printf("PREFS: writeSnmpCommunity complete - %s\n", maskSecret(community.c_str()));
 }
 
 void writeSnmpContact(String contact)
@@ -105,7 +112,7 @@ void writeHttpUser(String login)
 void writeHttpPassword(String password)
 {
     prefs.putString(__PREF_ADMIN_PASS, password);
-    Serial.printf("PREFS: writeHttpPassword complete - %s\n", password.c_str());
+    Serial.printf("PREFS: writeHttpPassword complete - %s\n", maskSecret(password.c_str()));
 }
 
 void writeDhcpMode(bool dhcpMode)
@@ -196,14 +203,14 @@ void getWpaKey(char wpakey[__PREF_WPA_KEY_LEN])
 {
     String returnString = prefs.getString(__PREF_WPA_KEY, "");
     returnString.toCharArray(wpakey, __PREF_WPA_KEY_LEN);
-    Serial.printf("PREFS: getWpaKey() returns - %s\n", wpakey);
+    Serial.printf("PREFS: getWpaKey() returns - %s\n", maskSecret(wpakey));
 }
 
 void getSnmpCommunity(char community[__PREF_COMMUNITY_LEN])
 {
     String returnString = prefs.getString(__PREF_COMMUNITY, __DEF_COMMUNITY);
     returnString.toCharArray(community, __PREF_COMMUNITY_LEN);
-    Serial.printf("PREFS: getSnmpCommunity() returns - %s\n", community);
+    Serial.printf("PREFS: getSnmpCommunity() returns - %s\n", maskSecret(community));
 }
 
 void getSnmpContact(char snmpcontact[__PREF_SNMP_SYSCONTACT_LEN])
@@ -238,7 +245,7 @@ void getHttpPassword(char httppassword[__PREF_ADMIN_PASS_LEN])
 {
     String returnString = prefs.getString(__PREF_ADMIN_PASS, __DEF_ADMIN_PASS);
     returnString.toCharArray(httppassword, __PREF_ADMIN_PASS_LEN);
-    Serial.printf("PREFS: getHttpPassword() returns - %s\n", httppassword);
+    Serial.printf("PREFS: getHttpPassword() returns - %s\n", maskSecret(httppassword));
 }
 
 bool getConfigured()

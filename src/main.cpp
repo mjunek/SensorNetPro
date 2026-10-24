@@ -800,7 +800,7 @@ void setup()
     Serial.println("Setting up Wi-Fi");
     if (ap_on == 0)
     {
-      Serial.printf("Starting Wifi, connecting to AP (Hostname: %s | SSID: %s | Key: %s)\n", ch_systemHostname, ch_wifiSSID, ch_wpaPsk);
+      Serial.printf("Starting Wifi, connecting to AP (Hostname: %s | SSID: %s | Key: %s)\n", ch_systemHostname, ch_wifiSSID, maskSecret(ch_wpaPsk));
       WiFi.hostname(ch_systemHostname);
       WiFi.mode(WIFI_STA);
       WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
@@ -808,7 +808,7 @@ void setup()
     }
     else
     {
-      Serial.printf("Starting Wifi, Creating SoftAP (SSID: %s | Key: %s)\n", ch_wifiSSID, ch_wpaPsk);
+      Serial.printf("Starting Wifi, Creating SoftAP (SSID: %s | Key: %s)\n", ch_wifiSSID, maskSecret(ch_wpaPsk));
       WiFi.softAP(ch_wifiSSID, ch_wpaPsk);
     }
   }
