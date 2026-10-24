@@ -175,7 +175,9 @@ AP mode has a related problem. `WiFi.config()` sets the station interface, not t
 
 The UI also never shows the server's `errorMessage`.
 
-#### 13. `sysObjectID` is registered with the wrong type
+#### 13. ✅ `sysObjectID` is registered with the wrong type
+> **Fixed:** `sysObjectID` is now registered with `addOIDHandler()`, so it is returned as an OBJECT IDENTIFIER (`.1.3.6.1.4.1.53165.0.1`). SNMP_Agent's OID encoder requires the `.1.3.` prefix, which this value has.
+
 It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT IDENTIFIER (`addOIDHandler`).
 
 #### 14. ✅ SysDescr serial format

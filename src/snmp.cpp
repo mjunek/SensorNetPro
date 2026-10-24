@@ -19,7 +19,7 @@
 #include "snmp.h"
 
 const char *oidSysDescr = ".1.3.6.1.2.1.1.1.0";    // OctetString SysDescr
-const char *oidSysObjectID = ".1.3.6.1.2.1.1.2.0"; // OctetString SysObjectID
+const char *oidSysObjectID = ".1.3.6.1.2.1.1.2.0"; // OID SysObjectID
 const char *oidSysUptime = ".1.3.6.1.2.1.1.3.0";   // TimeTicks sysUptime (hundredths of seconds)
 const char *oidSysContact = ".1.3.6.1.2.1.1.4.0";  // OctetString SysContact
 const char *oidSysName = ".1.3.6.1.2.1.1.5.0";     // OctetString SysName
@@ -54,7 +54,7 @@ void initialiseSnmp(char* ch_snmpCommunity, uint32_t *uptime, char *ch_snmpSysCo
     sprintf(SysDescr, "SensorNetPro v%s HW:%s@%d SN:%llx", __FIRMWARE_VERSION, ESP.getChipModel(), ESP.getChipRevision(), (unsigned long long)ESP.getEfuseMac());
     snmp.addReadOnlyStaticStringHandler(oidSysDescr, SysDescr);
     free(SysDescr);
-    snmp.addReadOnlyStaticStringHandler(oidSysObjectID, sysObject);
+    snmp.addOIDHandler(oidSysObjectID, sysObject);
     snmp.addTimestampHandler(oidSysUptime, uptime);
     snmp.addReadOnlyStaticStringHandler(oidSysContact, ch_snmpSysContact);
     snmp.addReadOnlyStaticStringHandler(oidSysName, ch_snmpSysName);
