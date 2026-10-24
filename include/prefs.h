@@ -148,7 +148,7 @@ void writeHttpPassword(String password);
 void writeDhcpMode(bool dhcpMode);
 void writeApMode(bool apMode);
 void writeConfigured(bool configured);
-void writeWirelesEnabled(bool wifiMode);
+void writeWirelessEnabled(bool wifiMode);
 
 IPAddress getIPAddress();
 IPAddress getSubnetMask();

@@ -133,10 +133,10 @@ void writeConfigured(bool configured)
     Serial.printf("PREFS: writeConfigured complete - %x\n", configured);
 }
 
-void writeWirelesEnabled(bool wifiMode)
+void writeWirelessEnabled(bool wifiMode)
 {
     prefs.putBool(__PREF_WIFI_ENABLED, wifiMode);
-    Serial.printf("PREFS: writeWirelesEnabled complete - %x\n", wifiMode);
+    Serial.printf("PREFS: writeWirelessEnabled complete - %x\n", wifiMode);
 }
 
 /*
@@ -334,7 +334,7 @@ void resetToDefaults(bool reboot)
     // Boolean values
     writeApMode(__DEF_AP_MODE);
     writeDhcpMode(__DEF_DHCP_MODE);
-    writeWirelesEnabled(__DEF_WIFI_ENABLED);
+    writeWirelessEnabled(__DEF_WIFI_ENABLED);
 
     // Save and reboot
     commitToPrefs(reboot);

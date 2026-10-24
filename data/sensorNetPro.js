@@ -780,7 +780,7 @@ function validateIpSettings() {
     case 4: // gateway = broadcastNumber
       $("#networkGateway").addClass("is-invalid").removeClass("is-valid");
       $("#networkGatewayValidateError").text(
-        "Gateway address be the broadcast address"
+        "Gateway address cannot be the broadcast address"
       );
       return false;
     case 5: //ip and gateway of diff subnets

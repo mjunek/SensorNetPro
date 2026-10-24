@@ -587,7 +587,7 @@ void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest
   writeDhcpMode(networkDhcp);
   writeHostname(networkHostname);
   writeSSID(networkSSID);
-  writeWirelesEnabled(networkWifi);
+  writeWirelessEnabled(networkWifi);
 
   if (ipError == nullptr)
   {

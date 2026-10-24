@@ -1,6 +1,6 @@
 # ESP SNMP Temperature Monitor #
 
-## Oveview ##
+## Overview ##
 This project was created as a cheaper alternative to commercial thermal sensors for data centre use.
 The system is aimed at using the SNMP protocol for monitoring temperatures in server racks.
 
@@ -10,7 +10,7 @@ These both supply a hard-wired connection into the monitoring/management network
 
 The button is used to reset the settings. Pressing this button and holding it for 5 seconds at power on will reset the settings to default.
 While the device is running, holding the button for 5 seconds reboots it (the error LED flashes while the button is held), and shorter presses are ignored. A reboot started this way, or from the web UI, never triggers the factory reset, even if the button is still held as the device restarts.
-The default mode is set automatically on first boot within the Preferences librbary.
+The default mode is set automatically on first boot within the Preferences library.
 
 The platform supports the Dallas 1-wire DS18B20 sensor set (https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf)
 It will discover up to 10 devices (configurable in ```prefs.h```), and the embedded 1-wire serial numbers are stored within the preferences to ensure consistent SNMP indexes within the table. Up to 20 devices are remembered. These can also be named with a friendly name, so that display shows something reasonable such as "Rack 1G, Front"
@@ -22,7 +22,7 @@ There are five entries under this table
 * ```53165.1.1.1.1``` - SNMP Index for discovery
 * ```53165.1.1.1.2``` - Serial number of sensor
 * ```53165.1.1.1.3``` - Friendly name of sensor
-* ```53165.1.1.1.4``` - Temperature in hundreths of Degrees Celsius -> This needs to be divided by 100 to get the actual temperature
+* ```53165.1.1.1.4``` - Temperature in hundredths of degrees Celsius -> This needs to be divided by 100 to get the actual temperature
 * ```53165.1.1.1.5``` - Sensor status: 1 = OK, 2 = read error (the temperature column then holds the last good reading)
 
 ## MIB ##
