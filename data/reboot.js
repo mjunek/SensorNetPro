@@ -15,7 +15,8 @@ function rebootNow() {
         timeout: 500,
         data: JSON.stringify(reqData),
         success: function (responseData) {
-            window.location.replace("/");
+            // The device restarts about a second after answering, so wait for it to come back
+            setTimeout(checkPage, 5000);
         },
         error: function (error) {
             setTimeout(checkPage, 5000);

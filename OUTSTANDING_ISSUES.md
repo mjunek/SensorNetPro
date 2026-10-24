@@ -281,7 +281,8 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
 
 ## Low / tidy-up
 
-- **Reboot response:** `apiReboot()` restarts before the response is sent. `reboot.js` still works through its error/poll fallback, but deferring the restart (set a flag and act on it in `loop()`) would give a clean response.
+- ✅ **Reboot response:** `apiReboot()` restarts before the response is sent. `reboot.js` still works through its error/poll fallback, but deferring the restart (set a flag and act on it in `loop()`) would give a clean response.
+  > **Fixed:** `apiReboot()` now only records the request, and `loop()` restarts a second later, once the response has gone out. On a successful response `reboot.js` now waits and polls `status` until the device is back, instead of going straight to `/` while the device is still restarting.
 - **Unused code:**
   - The static `sensorCount` in `snmp.cpp` is never used.
   - `apiSaveSnmpConfiguration` calls `completeSnmpSetup()` for no effect, because SNMP values only change after a reboot.

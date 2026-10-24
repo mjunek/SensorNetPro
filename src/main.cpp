@@ -36,6 +36,7 @@ bool eth_connected, dhcp_on, ap_on, wifi_on, isConfigured, resetNeeded, wifiConn
 bool statusLed = false;
 bool settingsRebootNeeded = false;
 uint32_t buttonPressedAt = 0; // millis() when the current runtime button press started, 0 if not pressed
+uint32_t rebootRequestedAt = 0; // millis() when a reboot was requested from the web UI, 0 if not requested
 bool fallbackApActive = false;
 char fallbackSsid[__PREF_SSID_LEN];
 uint32_t lastWifiRetry = 0;
@@ -369,7 +370,8 @@ void apiReboot(String *responseString, JsonObject *jsonRequest)
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
   serializeJson(jsonDoc, *responseString);
-  ESP.restart();
+  // Restart from loop() once the response has gone out, rather than from inside the request handler
+  rebootRequestedAt = millis() | 1; // never 0 once requested
 }
 
 void apiSensorData(String *responseString, JsonObject *jsonRequest)
@@ -1050,6 +1052,12 @@ void loop()
       WiFi.reconnect();
     }
   }
+  if (rebootRequestedAt != 0 && millis() - rebootRequestedAt >= 1000)
+  {
+    Serial.println("Rebooting ESP as requested");
+    ESP.restart();
+  }
+
   bool status = ((uptime / 50) % 2 == 1);
   if (statusLed != status)
   {
