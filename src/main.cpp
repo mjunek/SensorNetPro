@@ -32,7 +32,7 @@
 #include "snmp.h"        // SNMP Lib
 
 uint32_t uptime, prevPoll;
-int snmpTemperature[__MAX_SENSOR_COUNT], countSensors;
+int snmpTemperature[__MAX_SENSOR_COUNT], snmpSensorStatus[__MAX_SENSOR_COUNT], countSensors;
 bool eth_connected, dhcp_on, ap_on, wifi_on, isConfigured, resetNeeded, wifiConnected;
 bool statusLed = false;
 bool settingsRebootNeeded = false;
@@ -212,7 +212,16 @@ void updateSensorData()
   Serial.println("done, getting values");
   for (int i = 0; i < countSensors; i++)
   {
-    temperaturec[i] = sensors.getTempCByIndex(i);
+    // Read by address so a missing sensor can't shift readings onto other sensors' OIDs
+    temperaturec[i] = sensors.getTempC(sensorsUnique[i]);
+    // -127 = disconnected/CRC failure, 85 = power-on reset value (conversion never ran)
+    if (temperaturec[i] == DEVICE_DISCONNECTED_C || temperaturec[i] == 85.0f)
+    {
+      snmpSensorStatus[i] = SENSOR_STATUS_ERROR;
+      Serial.printf("%d=ERR(%.2f) ", i, temperaturec[i]);
+      continue;
+    }
+    snmpSensorStatus[i] = SENSOR_STATUS_OK;
     snmpTemperature[i] = temperaturec[i] * 100;
     Serial.printf("%d=%.2fºC ", i, temperaturec[i]);
   }
@@ -239,6 +248,7 @@ void apiSensorData(String *responseString, JsonObject *jsonRequest)
     jsonDoc["thermalSensorData"][i]["address"] = sensorAddress[i];
     jsonDoc["thermalSensorData"][i]["name"] = sensorName[i];
     jsonDoc["thermalSensorData"][i]["reading"] = (float)snmpTemperature[i] / 100.0f;
+    jsonDoc["thermalSensorData"][i]["ok"] = (snmpSensorStatus[i] == SENSOR_STATUS_OK);
   }
 
   serializeJson(jsonDoc, *responseString);
@@ -835,7 +845,8 @@ void setup()
     hexString.toCharArray(sensorAddress[i], 20);
     sensorName[i] = (char *)malloc(40);
     getFriendlyName(sensorName[i], hexString);
-    addThermalSensorHandler(sensorAddress[i], sensorName[i], snmpTemperature, i);
+    snmpSensorStatus[i] = SENSOR_STATUS_ERROR; // until the first good reading
+    addThermalSensorHandler(sensorAddress[i], sensorName[i], snmpTemperature, snmpSensorStatus, i);
   }
   completeSnmpSetup();
   initPortal();

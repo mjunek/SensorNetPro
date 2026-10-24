@@ -15,11 +15,12 @@ The platform supports the Dallas 1-wire DS18B20 sensor set (https://www.analog.c
 It will discover up to 10 devices (configurable in ```prefs.h```), and the embedded 1-wire serial numbers are stored within the preferences to ensure consistent SNMP indexes within the table. Up to 20 devices are remembered. These can also be named with a friendly name, so that display shows something reasonable such as "Rack 1G, Front"
 
 The SNMP OID consists of a prefix ```1.3.6.1.4.1.53165.1.1.1``` (enterprises.mortonLights.espThermalMonitor.sensorTable.sensorTableEntry) 
-There are four entries under this table
+There are five entries under this table
 * ```53165.1.1.1.1``` - SNMP Index for discovery
 * ```53165.1.1.1.2``` - Serial number of sensor
 * ```53165.1.1.1.3``` - Friendly name of sensor
 * ```53165.1.1.1.4``` - Temperature in hundreths of Degrees Celsius -> This needs to be divided by 100 to get the actual temperature
+* ```53165.1.1.1.5``` - Sensor status: 1 = OK, 2 = read error (the temperature column then holds the last good reading)
 
 ## MIB ##
 A MIB file is coming!

@@ -25,7 +25,11 @@
 #include <WiFi.h>
 
 void initialiseSnmp(char* ch_snmpCommunity, uint32_t *uptime, char *ch_snmpSysContact, char *ch_snmpSysName, char *ch_snmpLocation);
-void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperatureValue, int sensNum);
+// Values for the sensor status column (.5)
+#define SENSOR_STATUS_OK 1
+#define SENSOR_STATUS_ERROR 2
+
+void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperatureValue, int *statusValue, int sensNum);
 void completeSnmpSetup();
 void snmpAgentLoop();
 void updateThermalSensorName(char *sensorName, int sensNum);

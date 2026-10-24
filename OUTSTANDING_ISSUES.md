@@ -33,7 +33,14 @@ The only way out is the hardware reset button. **Fix:** change the default to `f
 
 This corrupts memory or crashes the device. **Fix:** clamp `countSensors` to `__MAX_SENSOR_COUNT`.
 
-### 3. Readings can be assigned to the wrong sensor
+### 3. ✅ Readings can be assigned to the wrong sensor
+> **Fixed:**
+> - Sensors are now read by address with `getTempC(sensorsUnique[i])`.
+> - A read of `-127` or `85` °C is treated as a failure. A new status column is set to 2 (read error), and the temperature OID keeps the last good reading.
+> - Status column: `…53165.1.1.1.5.<index>`, 1 = OK, 2 = read error. It starts at 2 until the first good read.
+> - The web API returns an `ok` flag, and the status table shows "Read error".
+> - The README OID list has been updated. Monitoring should alert on status ≠ 1.
+
 `updateSensorData()` reads each sensor by bus position with `getTempCByIndex(i)` (`src/main.cpp:215`). The SNMP OIDs and names, however, are tied to the serials found at boot. If a sensor drops off the bus or fails to respond, the remaining sensors' readings move up one position. They are then reported against the wrong rack position. Failed reads are also published without any check:
 - `-127 °C` (`DEVICE_DISCONNECTED_C`) is published as `-12700`.
 - `85 °C` (the power-on value) is published as a real reading.

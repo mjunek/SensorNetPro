@@ -50,6 +50,7 @@ let thermalSensorTable = $("#thermalSensorTable").DataTable({
     {
       targets: 3,
       render: function (data, type, row, meta) {
+        if (!row.ok) return "Read error";
         return data.toFixed(2) + " ºC";
       },
     },
