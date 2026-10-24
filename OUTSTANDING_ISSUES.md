@@ -305,7 +305,8 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
 
 - ✅ **README OID table does not match the code.** The README lists `.2` as the serial and `.3` as the name. The code registers `.2` as the **name** and `.3` as the **serial** (`src/snmp.cpp:78-79`). Decide which is correct before releasing a MIB.
   > **Fixed:** kept the firmware's order, so existing SNMP polling keeps working. The README now lists `.2` as the name and `.3` as the serial, and uses the same object names as the code (`sensorNetPro.thermalSensorTable.thermalSensorTableEntry`).
-- **MIB file:** not written yet. The README says "coming".
+- ✅ **MIB file:** not written yet. The README says "coming".
+  > **Fixed:** added `mibs/SENSORNETPRO-MIB.txt` (SMIv2), covering the thermal sensor table, the status enumeration and the sysObjectID. It compiles cleanly with pysmi, and its OIDs match the ones the firmware registers. Sub-identifiers `sensorNetPro.2`–`.99` are reserved for the tables of further sensor types. The README explains how to load it.
 - **`BUILDING.md`:** referenced in the README but missing. It should cover the PlatformIO build and the `uploadfs` step for SPIFFS.
 - **Other sensor types:** the 6c4966d commit message describes "pre-work for other sensor types", but none is visible in the code beyond the "thermal" naming.
 - **KiCad hardware:** the project was created in a8375cf, but the schematic and PCB are empty.

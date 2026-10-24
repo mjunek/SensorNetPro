@@ -26,7 +26,13 @@ There are five columns in this table, each indexed by the sensor's SNMP index (t
 * ```53165.1.1.1.5``` - Sensor status: 1 = OK, 2 = read error (the temperature column then holds the last good reading)
 
 ## MIB ##
-A MIB file is coming!
+The MIB is in ```mibs/SENSORNETPRO-MIB.txt```. Copy it into your SNMP manager's MIB directory to see named objects (for example ```thermalSensorTemperature```) instead of numeric OIDs. With net-snmp:
+
+```
+snmpwalk -v2c -c public -M +./mibs -m +SENSORNETPRO-MIB <device> SENSORNETPRO-MIB::thermalSensorTable
+```
+
+The device's sysObjectID is ```1.3.6.1.4.1.53165.0.1``` (```sensorNetProDevice```).
 
 ## License ##
 The project is licensed under the terms of the General Public License v3 as detailed in the LICENSE file

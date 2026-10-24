@@ -25,8 +25,8 @@ const char *oidSysContact = ".1.3.6.1.2.1.1.4.0";  // OctetString SysContact
 const char *oidSysName = ".1.3.6.1.2.1.1.5.0";     // OctetString SysName
 const char *oidSysLocation = ".1.3.6.1.2.1.1.6.0"; // OctetString SysLocation
 const char *oidSysServices = ".1.3.6.1.2.1.1.7.0"; // Integer sysServices
-const char *sysObject = ".1.3.6.1.4.1.53165.0.1";  // Default ObjectId for device = enterprises.mortonLights.sensorNetPro.objectIds.1
-const char *thermalBaseOid = ".1.3.6.1.4.1.53165.1.1.1."; // Base table oid for Thermal monitored objects =  enterprises.mortonLights.sensorNetPro.thermalSensorTable.thermalSensorTableEntry
+const char *sysObject = ".1.3.6.1.4.1.53165.0.1";  // sysObjectID = enterprises.mortonLights.mortonLightsObjectIds.sensorNetProDevice (mibs/SENSORNETPRO-MIB.txt)
+const char *thermalBaseOid = ".1.3.6.1.4.1.53165.1.1.1."; // Base table oid for Thermal monitored objects = enterprises.mortonLights.sensorNetPro.thermalSensorTable.thermalSensorTableEntry
 
 
 SNMPAgent snmp = SNMPAgent();

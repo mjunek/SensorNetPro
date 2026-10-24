@@ -1,0 +1,173 @@
+SENSORNETPRO-MIB DEFINITIONS ::= BEGIN
+
+--
+--  Sensor Net Pro
+--  Copyright (C) 2023 Michael Junek
+--
+--  This file is part of SensorNetPro.
+--
+--  SensorNetPro is free software: you can redistribute it and/or modify it under the terms
+--  of the GNU General Public License as published by the Free Software Foundation, either
+--  version 3 of the License, or (at your option) any later version.
+--
+--  SensorNetPro is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+--  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+--  See the GNU General Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License along with SensorNetPro in a file called LICENSE.
+--  If not, see <https://www.gnu.org/licenses/>.
+--
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, OBJECT-IDENTITY, Integer32, enterprises
+        FROM SNMPv2-SMI
+    DisplayString
+        FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP
+        FROM SNMPv2-CONF;
+
+sensorNetPro MODULE-IDENTITY
+    LAST-UPDATED "202610240000Z"
+    ORGANIZATION "SensorNetPro"
+    CONTACT-INFO
+        "Michael Junek
+         https://github.com/mjunek/SensorNetPro"
+    DESCRIPTION
+        "Sensor readings from a SensorNetPro rack temperature monitor.
+
+         Each sensor type has its own table directly under
+         sensorNetPro. Sub-identifiers 2 to 99 are reserved for the
+         tables of further sensor types."
+    REVISION "202610240000Z"
+    DESCRIPTION
+        "First published version, describing firmware 1.0.0."
+    ::= { mortonLights 1 }
+
+mortonLights OBJECT IDENTIFIER ::= { enterprises 53165 }
+
+-- sysObjectID values
+
+mortonLightsObjectIds OBJECT IDENTIFIER ::= { mortonLights 0 }
+
+sensorNetProDevice OBJECT-IDENTITY
+    STATUS current
+    DESCRIPTION
+        "The sysObjectID of a SensorNetPro device."
+    ::= { mortonLightsObjectIds 1 }
+
+-- Thermal sensors (DS18B20)
+
+thermalSensorTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF ThermalSensorTableEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The temperature sensors found on the 1-wire bus at startup.
+         Sensors are only discovered when the device starts, so a
+         sensor added while it is running appears after the next
+         reboot."
+    ::= { sensorNetPro 1 }
+
+thermalSensorTableEntry OBJECT-TYPE
+    SYNTAX ThermalSensorTableEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "One temperature sensor. The index is allocated the first time
+         a sensor's serial number is seen and is stored on the device,
+         so a sensor keeps its row across reboots and changes to the
+         order of the bus. Clearing the sensor configuration on the
+         device releases all allocated indexes."
+    INDEX { thermalSensorIndex }
+    ::= { thermalSensorTable 1 }
+
+ThermalSensorTableEntry ::= SEQUENCE {
+    thermalSensorIndex       Integer32,
+    thermalSensorName        DisplayString,
+    thermalSensorSerial      DisplayString,
+    thermalSensorTemperature Integer32,
+    thermalSensorStatus      INTEGER
+}
+
+thermalSensorIndex OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The index of this sensor's row. It is readable, unlike most
+         index objects, so that a walk of this column lists the
+         sensors."
+    ::= { thermalSensorTableEntry 1 }
+
+thermalSensorName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE (0..39))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The sensor's friendly name, such as 'Rack 1G, Front', set
+         from the web interface. It is the serial number until a name
+         is set."
+    ::= { thermalSensorTableEntry 2 }
+
+thermalSensorSerial OBJECT-TYPE
+    SYNTAX DisplayString (SIZE (16))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The sensor's 64-bit 1-wire ROM address, as 16 lower-case hex
+         digits in bus order (family code first)."
+    ::= { thermalSensorTableEntry 3 }
+
+thermalSensorTemperature OBJECT-TYPE
+    SYNTAX Integer32 (-5500..12500)
+    UNITS "hundredths of degrees Celsius"
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The temperature in hundredths of a degree Celsius, so 2350
+         is 23.5 degrees. When thermalSensorStatus is readError this
+         holds the last good reading, or 0 if there has been none
+         since startup."
+    ::= { thermalSensorTableEntry 4 }
+
+thermalSensorStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        ok(1),
+        readError(2)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Whether the last reading succeeded. readError means the
+         sensor did not answer, failed its checksum, or returned its
+         power-on value instead of a reading."
+    ::= { thermalSensorTableEntry 5 }
+
+-- Conformance
+
+sensorNetProConformance OBJECT IDENTIFIER ::= { sensorNetPro 100 }
+sensorNetProCompliances OBJECT IDENTIFIER ::= { sensorNetProConformance 1 }
+sensorNetProGroups      OBJECT IDENTIFIER ::= { sensorNetProConformance 2 }
+
+sensorNetProCompliance MODULE-COMPLIANCE
+    STATUS current
+    DESCRIPTION
+        "A SensorNetPro device."
+    MODULE -- this module
+        MANDATORY-GROUPS { thermalSensorGroup }
+    ::= { sensorNetProCompliances 1 }
+
+thermalSensorGroup OBJECT-GROUP
+    OBJECTS {
+        thermalSensorIndex,
+        thermalSensorName,
+        thermalSensorSerial,
+        thermalSensorTemperature,
+        thermalSensorStatus
+    }
+    STATUS current
+    DESCRIPTION
+        "The thermal sensor table."
+    ::= { sensorNetProGroups 1 }
+
+END
