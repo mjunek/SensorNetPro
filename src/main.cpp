@@ -688,10 +688,10 @@ void initPortal()
   Serial.println("Initialising web portal - setting up routing");
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { 
-              if(!isAuthenticated(request))
-                request->requestAuthentication("SensorNetPro", true);
-            request->send(SPIFFS, "/index.html", "text/html", false); });
+            {
+              if (!isAuthenticated(request))
+                return request->requestAuthentication("SensorNetPro", true);
+              request->send(SPIFFS, "/index.html", "text/html", false); });
   server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/bootstrap.min.css", "text/css", false); });
   server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -711,13 +711,15 @@ void initPortal()
   server.on("/sensorNetPro.js", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/sensorNetPro.js", "text/javascript", false); });
   server.on("/reboot.html", HTTP_GET, [](AsyncWebServerRequest *request)
-            { if(!isAuthenticated(request))
-                request->requestAuthentication("SensorNetPro", true);
-                 request->send(SPIFFS, "/reboot.html", "text/html", false); });
+            {
+              if (!isAuthenticated(request))
+                return request->requestAuthentication("SensorNetPro", true);
+              request->send(SPIFFS, "/reboot.html", "text/html", false); });
   server.on("/reboot.js", HTTP_GET, [](AsyncWebServerRequest *request)
-            {  if(!isAuthenticated(request))
-                request->requestAuthentication("SensorNetPro", true);
-                request->send(SPIFFS, "/reboot.js", "text/javascript", false); });
+            {
+              if (!isAuthenticated(request))
+                return request->requestAuthentication("SensorNetPro", true);
+              request->send(SPIFFS, "/reboot.js", "text/javascript", false); });
   AsyncCallbackJsonWebHandler *apiHandler = new AsyncCallbackJsonWebHandler("/json-api", jsonApiHandler);
 
   server.addHandler(apiHandler);

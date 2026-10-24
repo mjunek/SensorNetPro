@@ -81,7 +81,9 @@ This can cause intermittent crashes, especially when a sensor is renamed while i
 
 ## High
 
-### 6. Pages are served even when authentication fails
+### 6. ✅ Pages are served even when authentication fails
+> **Fixed:** the `/`, `/reboot.html` and `/reboot.js` handlers now `return` after `requestAuthentication()`, so an unauthenticated request gets only the 401 challenge.
+
 In the `/`, `/reboot.html` and `/reboot.js` routes (`src/main.cpp:660-690`), `requestAuthentication()` is not followed by `return`. The code goes straight on to `request->send(SPIFFS, …)`, so each request gets two responses. The page may end up being served without authentication. The API data itself is still protected, because `jsonApiHandler` returns correctly.
 
 ### 7. The device is insecure by default
