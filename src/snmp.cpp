@@ -26,13 +26,20 @@ const char *oidSysName = ".1.3.6.1.2.1.1.5.0";     // OctetString SysName
 const char *oidSysLocation = ".1.3.6.1.2.1.1.6.0"; // OctetString SysLocation
 const char *oidSysServices = ".1.3.6.1.2.1.1.7.0"; // Integer sysServices
 const char *sysObject = ".1.3.6.1.4.1.53165.0.1";  // sysObjectID = enterprises.mortonLights.mortonLightsObjectIds.sensorNetProDevice (mibs/SENSORNETPRO-MIB.txt)
-const char *thermalBaseOid = ".1.3.6.1.4.1.53165.1.1.1."; // Base table oid for Thermal monitored objects = enterprises.mortonLights.sensorNetPro.thermalSensorTable.thermalSensorTableEntry
+const char *sensorNetProOid = ".1.3.6.1.4.1.53165.1."; // enterprises.mortonLights.sensorNetPro, with one table per sensor type (thermalSensorTable = .1)
 
 
 SNMPAgent snmp = SNMPAgent();
 WiFiUDP udp;
 ValueCallback *nameOid[__MAX_SENSOR_COUNT];
 int snmpIndex[__MAX_SENSOR_COUNT];
+int snmpTable[__MAX_SENSOR_COUNT];
+
+// Entry OID of a sensor type's table, such as .1.3.6.1.4.1.53165.1.1.1. for thermalSensorTableEntry
+static String tableEntryOid(int table)
+{
+    return String(sensorNetProOid) + String(table) + ".1.";
+}
 
 void snmpAgentLoop()
 {
@@ -60,11 +67,11 @@ void initialiseSnmp(char* ch_snmpCommunity, uint32_t *uptime, char *ch_snmpSysCo
     snmp.addReadOnlyStaticStringHandler(oidSysLocation, ch_snmpLocation);
 }
 
-void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperatureValue, int *statusValue, int sensNum)
+void addSensorHandler(int table, char *sensorSerial, char *sensorName, int *value, int *statusValue, int sensNum)
 {
-    String oid_deviceIndex, oid_deviceName, oid_deviceSerial, oid_temp, oid_status;
-    char ch_oid_deviceIndex[40], ch_oid_deviceName[40], ch_oid_deviceSerial[40], ch_oid_temp[40], ch_oid_status[40];
-    Serial.println("++ Adding SNMP Thermal Sensor handler");
+    String oid_deviceIndex, oid_deviceName, oid_deviceSerial, oid_value, oid_status;
+    char ch_oid_deviceIndex[40], ch_oid_deviceName[40], ch_oid_deviceSerial[40], ch_oid_value[40], ch_oid_status[40];
+    Serial.printf("++ Adding SNMP handler for a sensor in table %d\n", table);
     int index = getSnmpIndex(sensorSerial);
     if (index < 1)
     {
@@ -72,30 +79,32 @@ void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperat
         return;
     }
     snmpIndex[sensNum] = index;
-    oid_deviceIndex = String(thermalBaseOid) + "1." + String(index);
-    oid_deviceName = String(thermalBaseOid) + "2." + String(index);
-    oid_deviceSerial = String(thermalBaseOid) + "3." + String(index);
-    oid_temp = String(thermalBaseOid) + "4." + String(index);
-    oid_status = String(thermalBaseOid) + "5." + String(index);
+    snmpTable[sensNum] = table;
+    String entryOid = tableEntryOid(table);
+    oid_deviceIndex = entryOid + "1." + String(index);
+    oid_deviceName = entryOid + "2." + String(index);
+    oid_deviceSerial = entryOid + "3." + String(index);
+    oid_value = entryOid + "4." + String(index);
+    oid_status = entryOid + "5." + String(index);
     oid_deviceIndex.toCharArray(ch_oid_deviceIndex, 40);
     oid_deviceName.toCharArray(ch_oid_deviceName, 40);
     oid_deviceSerial.toCharArray(ch_oid_deviceSerial, 40);
-    oid_temp.toCharArray(ch_oid_temp, 40);
+    oid_value.toCharArray(ch_oid_value, 40);
     oid_status.toCharArray(ch_oid_status, 40);
     Serial.printf("++ (%s) >> Index OID:        %s\n", sensorSerial, ch_oid_deviceIndex);
     Serial.printf("++ (%s) >> Device Name  OID: %s\n", sensorSerial, ch_oid_deviceName);
     Serial.printf("++ (%s) >> Serial OID:       %s\n", sensorSerial, ch_oid_deviceSerial);
-    Serial.printf("++ (%s) >> Temperature OID:  %s\n", sensorSerial, ch_oid_temp);
+    Serial.printf("++ (%s) >> Value OID:        %s\n", sensorSerial, ch_oid_value);
     Serial.printf("++ (%s) >> Status OID:       %s\n", sensorSerial, ch_oid_status);
 
     snmp.addReadOnlyIntegerHandler(ch_oid_deviceIndex, index);
     nameOid[sensNum] = snmp.addReadOnlyStaticStringHandler(ch_oid_deviceName, sensorName);
     snmp.addReadOnlyStaticStringHandler(ch_oid_deviceSerial, sensorSerial);
-    snmp.addIntegerHandler(ch_oid_temp, &temperatureValue[sensNum]);
-    snmp.addIntegerHandler(ch_oid_status, &statusValue[sensNum]);
+    snmp.addIntegerHandler(ch_oid_value, value);
+    snmp.addIntegerHandler(ch_oid_status, statusValue);
 }
 
-void updateThermalSensorName(char *sensorName, int sensNum)
+void updateSensorName(char *sensorName, int sensNum)
 {
     int index = snmpIndex[sensNum];
     ValueCallback *vc = nameOid[sensNum];
@@ -106,7 +115,7 @@ void updateThermalSensorName(char *sensorName, int sensNum)
         return;
     }
     char ch_oid_deviceName[40];
-    String oid_deviceName = String(thermalBaseOid) + "2." + String(index);
+    String oid_deviceName = tableEntryOid(snmpTable[sensNum]) + "2." + String(index);
     oid_deviceName.toCharArray(ch_oid_deviceName, 40);
     Serial.printf("Removing existing snmp handler for index %d", sensNum);
     snmp.removeHandler(vc);

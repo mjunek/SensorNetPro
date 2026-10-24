@@ -25,13 +25,15 @@
 #include <WiFi.h>
 
 void initialiseSnmp(char* ch_snmpCommunity, uint32_t *uptime, char *ch_snmpSysContact, char *ch_snmpSysName, char *ch_snmpLocation);
-// Values for the sensor status column (.5)
+// Values for the sensor status column (.5) of every sensor table
 #define SENSOR_STATUS_OK 1
 #define SENSOR_STATUS_ERROR 2
 
-void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperatureValue, int *statusValue, int sensNum);
+// Register the five columns of one sensor's row in table sensorNetPro.<table>. value and statusValue
+// are read live by the agent. sensNum identifies the sensor in updateSensorName().
+void addSensorHandler(int table, char *sensorSerial, char *sensorName, int *value, int *statusValue, int sensNum);
 void completeSnmpSetup();
 void snmpAgentLoop();
-void updateThermalSensorName(char *sensorName, int sensNum);
+void updateSensorName(char *sensorName, int sensNum);
 
 #endif // SNMP_H

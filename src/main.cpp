@@ -19,8 +19,6 @@
 #include <WiFi.h>              // ESP32 Core WiFi Library
 #include <ETH.h>               // Ethernet library
 #include <SNMP_Agent.h>        // SNMP routines
-#include <OneWire.h>           // Dallas OneWire interface
-#include <DallasTemperature.h> // DS18b120 support
 #include <SPIFFS.h>            // SPI Flash Filesystem for Web Server
 #include <ESPAsyncWebServer.h> // WebServer
 #include <AsyncJson.h>         // JSON Support for WebServer
@@ -29,28 +27,31 @@
 
 #include "prefs.h"       // Preferences Lib
 #include "snmp.h"        // SNMP Lib
+#include "sensor.h"      // Generic sensor interface
+#include "ds18b20.h"     // DS18B20 temperature sensors
 
 uint32_t uptime, prevPoll;
-int snmpTemperature[__MAX_SENSOR_COUNT], snmpSensorStatus[__MAX_SENSOR_COUNT], countSensors;
+int snmpSensorValue[__MAX_SENSOR_COUNT], snmpSensorStatus[__MAX_SENSOR_COUNT], countSensors;
 bool eth_connected, dhcp_on, ap_on, wifi_on, isConfigured, resetNeeded, wifiConnected;
 bool statusLed = false;
 bool settingsRebootNeeded = false;
 uint32_t buttonPressedAt = 0; // millis() when the current runtime button press started, 0 if not pressed
 uint32_t rebootRequestedAt = 0; // millis() when a reboot was requested from the web UI, 0 if not requested
-uint32_t conversionStartedAt = 0; // millis() when a sensor conversion was started, 0 if none is pending
+uint32_t readingStartedAt = 0; // millis() when the sensors were asked for a reading, 0 if none is pending
+uint32_t readingWaitTime = 0;  // ms to wait after readingStartedAt before collecting the readings
 bool fallbackApActive = false;
 char fallbackSsid[__PREF_SSID_LEN];
 uint32_t lastWifiRetry = 0;
 
-char *sensorAddress[__MAX_SENSOR_COUNT], *sensorName[__MAX_SENSOR_COUNT];
 char *ch_httpAdminUser, *ch_httpAdminPass, *ch_systemHostname, *ch_wifiSSID, *ch_wpaPsk, *ch_snmpCommunity, *ch_snmpSysName, *ch_snmpLocation, *ch_snmpSysContact;
 
 String firmwareVersion = __FIRMWARE_VERSION;
 String dhcpLabel, sensorCountLabel, ethLabel, wifiLabel, etherSpeed;
 
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
-DeviceAddress *sensorsUnique;
+// The supported sensor types. Sensors are discovered in this order, up to __MAX_SENSOR_COUNT in all.
+Ds18b20Sensors thermalSensors(ONE_WIRE_BUS, __DS18B20_RESOLUTION);
+SensorType *sensorTypes[] = {&thermalSensors};
+Sensor sensorList[__MAX_SENSOR_COUNT];
 AsyncWebServer server(80);
 
 // Guards state shared between loop() and the async web / WiFi event tasks:
@@ -237,36 +238,56 @@ void WiFiEvent(WiFiEvent_t event)
   digitalWrite(WIFI_LED, (wifiConnected || eth_connected));
 }
 
-// Start a temperature conversion on all sensors. It runs in the background (setWaitForConversion(false)),
-// and loop() collects the results with updateSensorData() once the conversion time has passed.
+// Find the connected sensors of every type, and give each a row in its type's SNMP table
+void discoverSensors()
+{
+  countSensors = 0;
+  for (SensorType *type : sensorTypes)
+  {
+    int found = type->discover(__MAX_SENSOR_COUNT - countSensors);
+    for (int j = 0; j < found; j++)
+    {
+      Sensor *sensor = &sensorList[countSensors];
+      sensor->type = type;
+      sensor->typeIndex = j;
+      type->serial(j, sensor->serial, SENSOR_SERIAL_LEN);
+      Serial.printf("Sensor: %s (%s)\n", sensor->serial, type->name());
+      getFriendlyName(sensor->name, sensor->serial);
+      snmpSensorStatus[countSensors] = SENSOR_STATUS_ERROR; // until the first good reading
+      addSensorHandler(type->snmpTable(), sensor->serial, sensor->name, &snmpSensorValue[countSensors],
+                       &snmpSensorStatus[countSensors], countSensors);
+      countSensors++;
+    }
+  }
+  Serial.printf("Using %d sensors\n", countSensors);
+}
+
+// Start a reading on every sensor type. The readings run in the background, and loop() collects
+// them with updateSensorData() once the slowest type is ready.
 void requestSensorData()
 {
   Serial.println("Requesting sensor data");
-  sensors.requestTemperatures();
-  conversionStartedAt = millis() | 1; // never 0 while pending
+  readingWaitTime = 0;
+  for (SensorType *type : sensorTypes)
+    readingWaitTime = max(readingWaitTime, type->startReading());
+  readingStartedAt = millis() | 1; // never 0 while pending
 }
 
 void updateSensorData()
 {
-  float temperaturec[__MAX_SENSOR_COUNT];
-
-  conversionStartedAt = 0;
+  readingStartedAt = 0;
   Serial.print("Sensor data: ");
   StateLock lock;
   for (int i = 0; i < countSensors; i++)
   {
-    // Read by address so a missing sensor can't shift readings onto other sensors' OIDs
-    temperaturec[i] = sensors.getTempC(sensorsUnique[i]);
-    // -127 = disconnected/CRC failure, 85 = power-on reset value (conversion never ran)
-    if (temperaturec[i] == DEVICE_DISCONNECTED_C || temperaturec[i] == 85.0f)
+    if (!sensorList[i].type->reading(sensorList[i].typeIndex, &snmpSensorValue[i]))
     {
       snmpSensorStatus[i] = SENSOR_STATUS_ERROR;
-      Serial.printf("%d=ERR(%.2f) ", i, temperaturec[i]);
+      Serial.printf("%d=ERR ", i);
       continue;
     }
     snmpSensorStatus[i] = SENSOR_STATUS_OK;
-    snmpTemperature[i] = temperaturec[i] * 100;
-    Serial.printf("%d=%.2fºC ", i, temperaturec[i]);
+    Serial.printf("%d=%.2f ", i, snmpSensorValue[i] / 100.0f);
   }
   Serial.println();
 }
@@ -385,13 +406,15 @@ void apiSensorData(String *responseString, JsonObject *jsonRequest)
   JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
+  // Each type's sensors are listed under "<type>SensorData", such as thermalSensorData
   for (int i = 0; i < countSensors; i++)
   {
-    jsonDoc["thermalSensorData"][i]["id"] = i + 1;
-    jsonDoc["thermalSensorData"][i]["address"] = sensorAddress[i];
-    jsonDoc["thermalSensorData"][i]["name"] = sensorName[i];
-    jsonDoc["thermalSensorData"][i]["reading"] = (float)snmpTemperature[i] / 100.0f;
-    jsonDoc["thermalSensorData"][i]["ok"] = (snmpSensorStatus[i] == SENSOR_STATUS_OK);
+    JsonObject sensor = jsonDoc[String(sensorList[i].type->name()) + "SensorData"].add<JsonObject>();
+    sensor["id"] = i + 1;
+    sensor["address"] = sensorList[i].serial;
+    sensor["name"] = sensorList[i].name;
+    sensor["reading"] = (float)snmpSensorValue[i] / 100.0f;
+    sensor["ok"] = (snmpSensorStatus[i] == SENSOR_STATUS_OK);
   }
 
   serializeJson(jsonDoc, *responseString);
@@ -692,7 +715,7 @@ void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonR
     bool found = false;
     while (sensNum < countSensors)
     {
-      if (!strcmp(sensAddr.c_str(), sensorAddress[sensNum]))
+      if (!strcmp(sensAddr.c_str(), sensorList[sensNum].serial))
       {
         found = true;
         break;
@@ -707,8 +730,8 @@ void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonR
       continue;
     }
     writeFriendlyName(sensName.c_str(), sensAddr.c_str());
-    getFriendlyName(sensorName[sensNum], sensAddr.c_str());
-    updateThermalSensorName(sensorName[sensNum], sensNum);
+    getFriendlyName(sensorList[sensNum].name, sensAddr.c_str());
+    updateSensorName(sensorList[sensNum].name, sensNum);
   }
   completeSnmpSetup();
   jsonDoc["restartRequired"] = false;
@@ -990,45 +1013,10 @@ void setup()
 
   uptime = 0;
   prevPoll = 0;
-  Serial.println("Starting Dallas 1-wire interface");
-  sensors.begin();
-  sensors.setResolution(__DS18B20_RESOLUTION);
-  sensors.setWaitForConversion(false);
-  countSensors = sensors.getDeviceCount();
-  Serial.println("Found " + String(countSensors) + " sensors");
-  if (countSensors > __MAX_SENSOR_COUNT)
-  {
-    Serial.printf("Too many sensors, only the first %d will be used\n", __MAX_SENSOR_COUNT);
-    countSensors = __MAX_SENSOR_COUNT;
-  }
-  sensorsUnique = new DeviceAddress[countSensors];
-
   initialiseSnmp(ch_snmpCommunity, &uptime, ch_snmpSysContact, ch_snmpSysName, ch_snmpLocation);
 
-  Serial.println("Setting up OIDs for discovered sensors");
-  for (int i = 0; i < countSensors; i++)
-  {
-    sensors.getAddress(sensorsUnique[i], i);
-    sensors.setResolution(sensorsUnique[i], __DS18B20_RESOLUTION);
-    Serial.print("Sensor: ");
-    String hexString = "";
-    for (int j = 0; j < 8; j++)
-    {
-      byte y = sensorsUnique[i][j];
-      if (y < 0x10)
-      {
-        hexString += "0";
-      }
-      hexString += String(y, HEX); // Lower byte first);
-    }
-    Serial.println(hexString);
-    sensorAddress[i] = (char *)malloc(20);
-    hexString.toCharArray(sensorAddress[i], 20);
-    sensorName[i] = (char *)malloc(40);
-    getFriendlyName(sensorName[i], hexString);
-    snmpSensorStatus[i] = SENSOR_STATUS_ERROR; // until the first good reading
-    addThermalSensorHandler(sensorAddress[i], sensorName[i], snmpTemperature, snmpSensorStatus, i);
-  }
+  Serial.println("Discovering sensors and setting up their OIDs");
+  discoverSensors();
   completeSnmpSetup();
   initPortal();
   MDNS.begin(ch_systemHostname);
@@ -1058,7 +1046,7 @@ void loop()
       WiFi.reconnect();
     }
   }
-  if (conversionStartedAt != 0 && millis() - conversionStartedAt >= sensors.millisToWaitForConversion())
+  if (readingStartedAt != 0 && millis() - readingStartedAt >= readingWaitTime)
   {
     updateSensorData();
   }

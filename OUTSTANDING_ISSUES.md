@@ -308,7 +308,8 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
 - ✅ **MIB file:** not written yet. The README says "coming".
   > **Fixed:** added `mibs/SENSORNETPRO-MIB.txt` (SMIv2), covering the thermal sensor table, the status enumeration and the sysObjectID. It compiles cleanly with pysmi, and its OIDs match the ones the firmware registers. Sub-identifiers `sensorNetPro.2`–`.99` are reserved for the tables of further sensor types. The README explains how to load it.
 - **`BUILDING.md`:** referenced in the README but missing. It should cover the PlatformIO build and the `uploadfs` step for SPIFFS.
-- **Other sensor types:** the 6c4966d commit message describes "pre-work for other sensor types", but none is visible in the code beyond the "thermal" naming.
+- ✅ **Other sensor types:** the 6c4966d commit message describes "pre-work for other sensor types", but none is visible in the code beyond the "thermal" naming.
+  > **Fixed:** the firmware now works through a `SensorType` interface (`include/sensor.h`), with DS18B20 as the only implementation (`src/ds18b20.cpp`). Discovery, background readings, the SNMP rows and the `sensor-data` API all handle sensors generically: each type has its own table (`sensorNetPro.<n>`, thermal = 1) with the same columns, and its sensors are listed under `<type>SensorData` in the API. The OIDs, the API and the web UI are unchanged for the thermal sensors. The README explains how to add a type. Showing a new type in the web UI is still a manual step.
 - **KiCad hardware:** the project was created in a8375cf, but the schematic and PCB are empty.
 - **README status:** still says "Initial commit … NOT YET complete. There is some seriously broken code in here" (2023-Oct-10). Update it once the critical items above are fixed.
 - **No firmware update path:** there is no OTA update (ArduinoOTA or a web upload). A device in a rack has to be removed to update it.

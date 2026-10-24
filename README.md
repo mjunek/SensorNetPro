@@ -25,7 +25,13 @@ There are five columns in this table, each indexed by the sensor's SNMP index (t
 * ```53165.1.1.1.4``` - Temperature in hundredths of degrees Celsius -> This needs to be divided by 100 to get the actual temperature
 * ```53165.1.1.1.5``` - Sensor status: 1 = OK, 2 = read error (the temperature column then holds the last good reading)
 
-## MIB ##
+### Sensor types ###
+DS18B20 temperature sensors are the only type supported so far, but the firmware is built around a generic sensor interface (```include/sensor.h```) so that others can be added. Each type gets its own SNMP table under ```1.3.6.1.4.1.53165.1``` with the same five columns (index, name, serial, value, status), with values scaled by 100. The thermal table is ```.1```, and ```.2``` to ```.99``` are reserved for further types. To add a type:
+1. Implement ```SensorType``` for it (see ```src/ds18b20.cpp```), and add an instance to ```sensorTypes[]``` in ```src/main.cpp```.
+2. Give it the next free table number, and add its table to the MIB.
+3. Show it in the web UI. The JSON API already lists each type's sensors under ```<type>SensorData```, but the page only displays ```thermalSensorData``` today.
+
+
 The MIB is in ```mibs/SENSORNETPRO-MIB.txt```. Copy it into your SNMP manager's MIB directory to see named objects (for example ```thermalSensorTemperature```) instead of numeric OIDs. With net-snmp:
 
 ```
