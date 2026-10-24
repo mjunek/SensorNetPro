@@ -1,3 +1,5 @@
+"use strict";
+
 let ajaxBase = "/json-api";
 let currentSection;
 let statusRefreshTimer;
@@ -363,7 +365,7 @@ function saveSection(section) {
       reqData.webAction = "save-thermal-sensor";
       let rowCount = thermalSensorConfigTable.rows().count();
       reqData.sensorCount = rowCount;
-      for (i = 1; i <= rowCount; i++) {
+      for (let i = 1; i <= rowCount; i++) {
         let boxId = "#thermalSensorName" + i;
         let sensorName = $(boxId).val();
         let sensorSerial = $(boxId).attr("data-serial");
@@ -386,7 +388,7 @@ function saveSection(section) {
     data: JSON.stringify(reqData),
     success: function (responseData) {
       if (responseData.error == false) {
-        for (field in sectionFields[section]) {
+        for (const field in sectionFields[section]) {
           config[sectionFields[section][field]] = responseData[sectionFields[section][field]];
         }
         if (section == "admin" && reqData.modifyAdminPass) {
@@ -566,7 +568,7 @@ function validate(section) {
 
     case "thermal":
       let sensorSuccess = true;
-      for (i = 1; i <= thermalSensorConfigTable.rows().count(); i++) {
+      for (let i = 1; i <= thermalSensorConfigTable.rows().count(); i++) {
         let sensorName = "thermalSensorName" + i;
         if (!validateSensor(sensorName)) {
           sensorSuccess = false;
@@ -604,7 +606,7 @@ function isValidIP(ipAddress) {
   const ipArray = ipAddress.split(".");
   if (ipArray.length != 4) return false;
 
-  for (i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) {
     let ipOctet = parseInt(ipArray[i]);
     if (isNaN(ipOctet) || ipOctet < 0 || ipOctet > 255) return false;
   }
@@ -616,7 +618,7 @@ function isValidSubnetMask(subnet) {
   const ipArray = subnet.split(".");
   if (ipArray.length != 4) return false;
   let endFound = false;
-  for (i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) {
     let ipOctet = parseInt(ipArray[i]);
     if (isNaN(ipOctet) || ipOctet < 0 || ipOctet > 255) return false;
     if (ipOctet == 0 && i == 0) return false;
@@ -691,7 +693,9 @@ function isValidIpGatewaySubnet(ipAddress, subnet, gateway) {
 }
 
 function validateIpSettings() {
+  // Defaults match what saveSection() sends when no radio is checked
   let dhcpMode = $("input[type='radio'][name='networkDHCP']:checked");
+  let dhcpModeValue = 0;
   if (dhcpMode.length > 0) {
     dhcpModeValue = dhcpMode.val();
   }
@@ -783,6 +787,7 @@ function validateHostname() {
 
 function validateWifiSettings() {
   let wifiMode = $("input[type='radio'][name='networkWifi']:checked");
+  let wifiModeValue = 0;
   if (wifiMode.length > 0) {
     wifiModeValue = wifiMode.val();
   }

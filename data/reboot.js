@@ -1,3 +1,5 @@
+"use strict";
+
 let ajaxBase = "/json-api";
 let reqData = new Object();
 reqData.webAction = "reboot";

@@ -262,7 +262,11 @@ Sensor names and serials are concatenated into HTML without escaping (`data/sens
 
 `setWifiStatus()` targets `#networkWifiModeAp`, but the element is `#networkWifiModeAP` (`data/sensorNetPro.js:272`). The AP/Station radio buttons are therefore never disabled when Wi-Fi is turned off.
 
-#### 22. Undeclared variables
+#### 22. ✅ Undeclared variables
+> **Fixed:**
+> - **Declarations:** all loop variables and the `dhcpModeValue`/`wifiModeValue` values are now declared. When no radio is checked, they default to what `saveSection()` sends (DHCP off, Wi-Fi off).
+> - **Strict mode:** `sensorNetPro.js` and `reboot.js` now start with `"use strict"`, so a future implicit global throws. Both pages run clean under the UI test.
+
 `dhcpModeValue`, `wifiModeValue` and the loop variable `i` are implicit globals (`data/sensorNetPro.js:336,560,649,729`). If no radio button is checked, `validateIpSettings()` throws a `ReferenceError`.
 
 #### 23. Status refresh stops permanently after one error
