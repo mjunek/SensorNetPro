@@ -312,5 +312,11 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
   > **Fixed:** the firmware now works through a `SensorType` interface (`include/sensor.h`), with DS18B20 as the only implementation (`src/ds18b20.cpp`). Discovery, background readings, the SNMP rows and the `sensor-data` API all handle sensors generically: each type has its own table (`sensorNetPro.<n>`, thermal = 1) with the same columns, and its sensors are listed under `<type>SensorData` in the API. The OIDs, the API and the web UI are unchanged for the thermal sensors. The README explains how to add a type. Showing a new type in the web UI is still a manual step.
 - **KiCad hardware:** the project was created in a8375cf, but the schematic and PCB are empty.
 - **README status:** still says "Initial commit … NOT YET complete. There is some seriously broken code in here" (2023-Oct-10). Update it once the critical items above are fixed.
-- **No firmware update path:** there is no OTA update (ArduinoOTA or a web upload). A device in a rack has to be removed to update it.
+- ✅ **No firmware update path:** there is no OTA update (ArduinoOTA or a web upload). A device in a rack has to be removed to update it.
   - `huge_app.csv` has no second app slot (see item 19). Adding OTA will need either a custom partition table or smaller web assets. Two ~1.6 MB app slots leave about 640 KB for SPIFFS. Gzipping the UI would shrink it from ~500 KB, and ESPAsyncWebServer serves `.gz` files automatically.
+  > **Fixed:**
+  > - **Partitions:** new `partitions.csv` with two 1.75 MB OTA app slots (the firmware uses 86%) and 448 KB of SPIFFS. NVS keeps its offset, so settings survive the one USB re-flash that the table change needs.
+  > - **Gzipped UI:** `scripts/gzip_data.py` builds the filesystem image from a gzipped copy of `data/` (about 127 KB in all), and ESPAsyncWebServer serves the `.gz` files transparently.
+  > - **Web upload:** Admin → Firmware Update uploads `firmware.bin` or `spiffs.bin` to `POST /update`, which streams it into the `Update` library and restarts once the response has gone out. It needs the admin login and a non-default password, allows one update at a time, and aborts if the connection drops.
+  > - **Recovery page:** a minimal upload page is built into the firmware at `/update`, and `/` falls back to it when the web UI files are missing, such as after a failed filesystem upload.
+  > - **ArduinoOTA:** `pio run -t upload --upload-port <ip>` works, authenticated with the admin password and only once that has been changed.

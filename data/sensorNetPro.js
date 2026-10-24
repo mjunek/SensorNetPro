@@ -1080,9 +1080,87 @@ function clearSensorConfig() {
 }
 
 // The device is locked to the Admin tab until the factory default password is changed
+function showUpdateError(message) {
+  $("#updateStatus").text("");
+  $("#btnUploadUpdate").prop("disabled", false);
+  $("#jsErrorText").text(message);
+  $("#jsError").show();
+}
+
+// Upload a firmware or web interface image. The device writes it as it arrives, then restarts.
+function uploadUpdate() {
+  let file = $("#updateFile")[0].files[0];
+  let target = $("#updateTarget").val();
+  if (!file) {
+    showUpdateError("Choose an image file to upload first.");
+    return;
+  }
+  let what = target == "filesystem" ? "web interface" : "firmware";
+  if (!confirm("Upload " + file.name + " as the new " + what + "? The device will restart.")) {
+    return;
+  }
+  let formData = new FormData();
+  formData.append("update", file, file.name);
+  $("#jsError").hide();
+  $("#btnUploadUpdate").prop("disabled", true);
+  $("#updateStatus").text("Uploading...");
+  $.ajax({
+    url: "/update?target=" + encodeURIComponent(target),
+    type: "POST",
+    data: formData,
+    processData: false,
+    contentType: false,
+    dataType: "json",
+    xhr: function () {
+      let xhr = new window.XMLHttpRequest();
+      xhr.upload.addEventListener("progress", function (event) {
+        if (event.lengthComputable) {
+          $("#updateStatus").text("Uploading: " + Math.round((event.loaded * 100) / event.total) + "%");
+        }
+      });
+      return xhr;
+    },
+    success: function (responseData) {
+      if (responseData.error == false) {
+        $("#updateStatus").text("Update written. Waiting for the device to restart...");
+        setTimeout(waitForRestart, 5000);
+      } else {
+        showUpdateError("The update failed: " + responseData.errorMessage);
+      }
+    },
+    error: function (xhr) {
+      let message = "The upload failed.";
+      if (xhr.responseJSON && xhr.responseJSON.errorMessage) {
+        message = "The update failed: " + xhr.responseJSON.errorMessage;
+      }
+      showUpdateError(message);
+    },
+  });
+}
+
+function waitForRestart() {
+  let reqData = new Object();
+  reqData.webAction = "status";
+  $.ajax({
+    url: ajaxBase,
+    contentType: "application/json",
+    type: "POST",
+    dataType: "json",
+    timeout: 1000,
+    data: JSON.stringify(reqData),
+    success: function () {
+      window.location.reload();
+    },
+    error: function () {
+      setTimeout(waitForRestart, 5000);
+    },
+  });
+}
+
 function lockToPasswordChange() {
   $("nav button").not("#btnNavAdmin").prop("disabled", true);
   $("#adminConfigReset").hide();
+  $("#adminFirmwareUpdate").hide();
   $("#passwordChangeNotice").show();
   showSection("admin");
 }

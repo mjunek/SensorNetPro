@@ -53,5 +53,12 @@ Each supported board has its own PlatformIO environment. `esp32poe` is the defau
 * Olimex ESP32-POE: ```pio run -e esp32poe```
 * WT32-ETH01: ```pio run -e wt32-eth01``` (provisional pin map, see ```platformio.ini```)
 
+## Firmware updates ##
+Once the default admin password has been changed, the device can be updated over the network:
+* From the web UI: Admin → Firmware Update. Upload ```firmware.bin``` for the firmware, or ```spiffs.bin``` for the web interface. If the web interface is ever missing, the same upload form is built into the firmware at ```http://<device>/update```.
+* From PlatformIO, using the admin password: ```PLATFORMIO_UPLOAD_FLAGS="--auth=<admin password>" pio run -e esp32poe -t upload --upload-port <device IP>``` (or ```-t uploadfs``` for the web interface).
+
+Devices flashed before OTA support was added need one USB upload of both the firmware and the filesystem, because the partition table changed. Settings are kept. See BUILDING.md.
+
 ## Updates ##
 _Update 2023-Oct-10:_ Initial commit to repository is NOT YET complete. There is some seriously broken code in here.

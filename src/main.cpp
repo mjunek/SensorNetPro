@@ -24,6 +24,8 @@
 #include <AsyncJson.h>         // JSON Support for WebServer
 #include <ArduinoJson.h>       // JSON Support for Program
 #include <ESPmDNS.h>           // MDNS Responder
+#include <Update.h>            // Firmware and filesystem updates from the web UI
+#include <ArduinoOTA.h>        // Network updates from PlatformIO (espota)
 
 #include "prefs.h"       // Preferences Lib
 #include "snmp.h"        // SNMP Lib
@@ -37,6 +39,10 @@ bool statusLed = false;
 bool settingsRebootNeeded = false;
 uint32_t buttonPressedAt = 0; // millis() when the current runtime button press started, 0 if not pressed
 uint32_t rebootRequestedAt = 0; // millis() when a reboot was requested from the web UI, 0 if not requested
+AsyncWebServerRequest *updateRequest = nullptr; // the upload that owns the running web update, if any
+String updateError;                             // why the current web update failed, empty if it hasn't
+bool updateSucceeded = false;
+bool otaPasswordChanged = false; // set by the web task, applied by loop(), which owns ArduinoOTA
 uint32_t readingStartedAt = 0; // millis() when the sensors were asked for a reading, 0 if none is pending
 uint32_t readingWaitTime = 0;  // ms to wait after readingStartedAt before collecting the readings
 bool fallbackApActive = false;
@@ -560,6 +566,7 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
 
   commitToPrefs(false);
   loadPreferences(true);
+  otaPasswordChanged = true;
   apiGetConfiguration(&jsonDoc, false, false, true);
   serializeJson(jsonDoc, *responseString);
 }
@@ -866,6 +873,134 @@ void startFallbackAp()
   fallbackApActive = true;
 }
 
+// Built into the firmware so that a failed or missing filesystem image can still be replaced
+const char recoveryPage[] = R"(<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SensorNetPro Update</title></head>
+<body style="font-family: sans-serif; max-width: 40em; margin: 2em auto; padding: 0 1em">
+<h1>SensorNetPro Update</h1>
+<p>Upload a firmware image (<code>firmware.bin</code>) or a web UI filesystem image (<code>spiffs.bin</code>).
+The device restarts once the upload has been written.</p>
+<h2>Firmware</h2>
+<form method="POST" action="/update?target=firmware" enctype="multipart/form-data">
+<input type="file" name="update" accept=".bin" required> <button>Upload firmware</button></form>
+<h2>Web UI filesystem</h2>
+<form method="POST" action="/update?target=filesystem" enctype="multipart/form-data">
+<input type="file" name="update" accept=".bin" required> <button>Upload filesystem</button></form>
+</body></html>
+)";
+
+// Receives an uploaded image for /update?target=firmware|filesystem, writing it as it arrives.
+// Only one update runs at a time, and only for an authenticated admin with a non-default password.
+void handleUpdateUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  if (index == 0)
+  {
+    if (!isAuthenticated(request) || adminPasswordIsDefault())
+      return; // the request handler answers with the auth challenge or the error
+    if (updateRequest != nullptr || Update.isRunning())
+    {
+      Serial.println("Update: rejected, another update is running");
+      return;
+    }
+    bool filesystem = request->hasParam("target") && request->getParam("target")->value() == "filesystem";
+    Serial.printf("Update: receiving %s image %s\n", filesystem ? "filesystem" : "firmware", filename.c_str());
+    updateRequest = request;
+    updateError = "";
+    updateSucceeded = false;
+    request->onDisconnect([request]()
+                          {
+                            // Abort an upload that was cut off, so the next one can start
+                            if (updateRequest == request)
+                            {
+                              if (Update.isRunning())
+                              {
+                                Serial.println("Update: connection lost, aborting");
+                                Update.abort();
+                              }
+                              updateRequest = nullptr;
+                            } });
+    if (filesystem)
+      SPIFFS.end(); // the image replaces the mounted filesystem. The device restarts afterwards
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN, filesystem ? U_SPIFFS : U_FLASH))
+      updateError = Update.errorString();
+  }
+  if (updateRequest != request || updateError.length() > 0)
+    return;
+  if (len > 0 && Update.write(data, len) != len)
+  {
+    updateError = Update.errorString();
+    Update.abort();
+    return;
+  }
+  if (final)
+  {
+    if (Update.end(true))
+      updateSucceeded = true;
+    else
+      updateError = Update.errorString();
+  }
+}
+
+void handleUpdateRequest(AsyncWebServerRequest *request)
+{
+  if (!isAuthenticated(request))
+    return request->requestAuthentication("SensorNetPro", true);
+  if (adminPasswordIsDefault())
+  {
+    request->send(403, "application/json", "{ \"errorMessage\": \"The default admin password must be changed first\", \"error\": true, \"passwordChangeRequired\": true }");
+    return;
+  }
+  JsonDocument jsonDoc;
+  String response;
+  int status = 200;
+  if (updateRequest != request)
+  {
+    status = 409;
+    jsonDoc["error"] = true;
+    jsonDoc["errorMessage"] = "No image was received, or another update is in progress";
+  }
+  else if (!updateSucceeded)
+  {
+    status = 400;
+    jsonDoc["error"] = true;
+    jsonDoc["errorMessage"] = "Update failed: " + (updateError.length() > 0 ? updateError : String("upload incomplete"));
+    if (Update.isRunning())
+      Update.abort();
+    updateRequest = nullptr;
+  }
+  else
+  {
+    jsonDoc["error"] = false;
+    jsonDoc["errorMessage"] = "Success";
+    jsonDoc["restartRequired"] = true;
+    updateRequest = nullptr;
+    rebootRequestedAt = millis() | 1; // restart once the response has gone out
+  }
+  Serial.printf("Update: %s\n", jsonDoc["errorMessage"].as<const char *>());
+  serializeJson(jsonDoc, response);
+  request->send(status, "application/json", response);
+}
+
+// Network updates with `pio run -t upload --upload-port <device>`, using the admin password.
+// loop() only services them once the default password has been changed.
+void initArduinoOta()
+{
+  ArduinoOTA.setHostname(ch_systemHostname);
+  ArduinoOTA.setPassword(ch_httpAdminPass);
+  ArduinoOTA.setMdnsEnabled(false); // mDNS is started in setup()
+  ArduinoOTA.onStart([]()
+                     {
+                       if (ArduinoOTA.getCommand() == U_SPIFFS)
+                         SPIFFS.end();
+                       Serial.printf("OTA: receiving %s image\n", ArduinoOTA.getCommand() == U_SPIFFS ? "filesystem" : "firmware"); });
+  ArduinoOTA.onEnd([]()
+                   { Serial.println("OTA: complete, restarting"); });
+  ArduinoOTA.onError([](ota_error_t error)
+                     { Serial.printf("OTA: failed, error %u\n", error); });
+  ArduinoOTA.begin();
+}
+
 void initPortal()
 {
   Serial.println("Initialising web portal - setting up routing");
@@ -874,7 +1009,16 @@ void initPortal()
             {
               if (!isAuthenticated(request))
                 return request->requestAuthentication("SensorNetPro", true);
+              // Without a web UI image (or after a failed filesystem update), offer the recovery page
+              if (!SPIFFS.exists("/index.html") && !SPIFFS.exists("/index.html.gz"))
+                return request->send(200, "text/html", recoveryPage);
               request->send(SPIFFS, "/index.html", "text/html", false); });
+  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+              if (!isAuthenticated(request))
+                return request->requestAuthentication("SensorNetPro", true);
+              request->send(200, "text/html", recoveryPage); });
+  server.on("/update", HTTP_POST, handleUpdateRequest, handleUpdateUpload);
   server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/bootstrap.min.css", "text/css", false); });
   server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -1021,16 +1165,28 @@ void setup()
   initPortal();
   MDNS.begin(ch_systemHostname);
   MDNS.addService("http", "tcp", 80);
+  initArduinoOta();
+  MDNS.enableArduino(3232, true);
   digitalWrite(ERROR_LED, 0);
   digitalWrite(STATUS_LED, 1);
 }
 
 void loop()
 {
+  bool otaAllowed;
   {
     StateLock lock;
     snmpAgentLoop();
+    otaAllowed = !adminPasswordIsDefault();
+    if (otaPasswordChanged)
+    {
+      ArduinoOTA.setPassword(ch_httpAdminPass);
+      otaPasswordChanged = false;
+    }
   }
+  // Blocks while an update is received. Restarts the device when one completes
+  if (otaAllowed)
+    ArduinoOTA.handle();
   uptime = esp_timer_get_time() / 10000;
   if (prevPoll == 0 || prevPoll + (SENSOR_TIME * 100) <= uptime)
   {

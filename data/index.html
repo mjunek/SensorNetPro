@@ -570,6 +570,27 @@
                     </div>
                 </div>
             </div>
+            <div id="adminFirmwareUpdate" class="ui-section">
+                <div class="row ui-section-header">
+                    <div class="col-12 text-center">Firmware Update</div>
+                </div>
+                <div class="row ui-section-body">
+                    <div class="col-12 text-center mt-2">
+                        <select id="updateTarget" class="custom-select w-auto mx-1">
+                            <option value="firmware" selected>Firmware (firmware.bin)</option>
+                            <option value="filesystem">Web interface (spiffs.bin)</option>
+                        </select>
+                        <input id="updateFile" type="file" accept=".bin" class="mx-1">
+                        <button id="btnUploadUpdate" class="btn btn-outline-warning px-2 mx-1 py-1"
+                            onclick="uploadUpdate()">Upload</button>
+                    </div>
+                    <div class="col-12 text-center mt-2"><span id="updateStatus"></span></div>
+                    <div class="col-12 text-center mb-2">
+                        <small>The device restarts once the image has been written, and this page reloads when it is
+                            back. Build the images with PlatformIO (see BUILDING.md).</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="sensorNetPro.js"></script>

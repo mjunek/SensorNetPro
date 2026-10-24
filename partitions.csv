@@ -1,0 +1,8 @@
+# 4MB flash: two 1.75MB app slots for OTA updates, and 448KB of SPIFFS for the (gzipped) web UI.
+# nvs is at the same offset and size as in the stock tables, so settings survive a change of table.
+# Name,   Type, SubType, Offset,   Size
+nvs,      data, nvs,     0x9000,   0x5000
+otadata,  data, ota,     0xe000,   0x2000
+app0,     app,  ota_0,   0x10000,  0x1C0000
+app1,     app,  ota_1,   0x1D0000, 0x1C0000
+spiffs,   data, spiffs,  0x390000, 0x70000
