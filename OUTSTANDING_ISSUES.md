@@ -185,17 +185,12 @@ It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT I
 
 `ESP.getEfuseMac()` returns a `uint64_t`, but it is formatted with `%x` (`src/snmp.cpp:54`). Use `%llx`.
 
-#### 15. SNMP_Agent API usage needs checking
-> **Checked against SNMP_Agent 2.1.0:**
-> - `setReadOnlyCommunity`, `setReadWriteCommunity`, `addReadOnlyStaticStringHandler` and `addOIDHandler` all take `const std::string&` and copy the value. Freeing `SysDescr` and using the stack community buffer are therefore safe.
-> - The trailing `40` in `addReadOnlyStaticStringHandler(oid, value, 40)` binds to `bool overwritePrefix`, so the calls pass `true`. This has no effect while no OID prefix is set, but the argument should be removed.
-> - `removeHandler()` does not `delete` the callback, so each rename leaks one `ValueCallback`. This is still open.
-
-- `addReadOnlyStaticStringHandler(oid, sensorName, 40)` (`src/snmp.cpp:91,92,106`): the `40` looks like a buffer length left over from the v1 API. In 2.x it may bind to a `bool` parameter instead.
-- `setReadWriteCommunity()` is given a stack array of length 1.
-- `SysDescr` is `free()`d right after it is registered.
-
-Each of these is only safe if the library copies the strings. Confirm against SNMP_Agent 2.1.
+#### 15. ✅ SNMP_Agent API usage needs checking
+> **Fixed:** the API usage has been checked against SNMP_Agent 2.1.0 and corrected.
+> - **String handling (already safe):** `setReadOnlyCommunity`, `setReadWriteCommunity`, `addReadOnlyStaticStringHandler` and `addOIDHandler` all take `const std::string&` and copy the value. Freeing `SysDescr` and passing a stack buffer to `setReadWriteCommunity()` are both safe.
+> - **The trailing `40`:** in `addReadOnlyStaticStringHandler(oid, value, 40)` it bound to `bool overwritePrefix`. It has been removed.
+> - **Leak on rename:** `updateThermalSensorName()` leaked one `ValueCallback` per rename, because `removeHandler()` doesn't free it. It now deletes the old callback. `ValueCallback`'s destructor isn't virtual, so the delete goes through the concrete `ReadOnlyStringCallback` type. The state mutex (item 5) is held during the delete, so `snmp.loop()` can't be using it.
+> - **Rename of a skipped sensor:** a sensor that got no SNMP index at boot used to register a name OID at index 0 when renamed. It is now skipped.
 
 #### 16. Ethernet pin definitions are not used
 > **Update (v3 migration):** on Arduino-ESP32 v3, the no-argument `ETH.begin()` takes `ETH_PHY_TYPE`, `ETH_PHY_ADDR`, `ETH_PHY_MDC`, `ETH_PHY_MDIO`, `ETH_PHY_POWER` and `ETH_CLK_MODE` from the board variant. The `esp32-poe` variant defines all of them correctly. It also selects GPIO0 for the clock when PSRAM is enabled. `ethsettings.h` is still redundant, and WT32-ETH01 still needs its own environment.

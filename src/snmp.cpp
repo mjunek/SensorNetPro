@@ -91,8 +91,8 @@ void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperat
     Serial.printf("++ (%s) >> Status OID:       %s\n", sensorSerial, ch_oid_status);
 
     snmp.addReadOnlyIntegerHandler(ch_oid_deviceIndex, index);
-    nameOid[sensNum] = snmp.addReadOnlyStaticStringHandler(ch_oid_deviceName, sensorName, 40);
-    snmp.addReadOnlyStaticStringHandler(ch_oid_deviceSerial, sensorSerial, 40);
+    nameOid[sensNum] = snmp.addReadOnlyStaticStringHandler(ch_oid_deviceName, sensorName);
+    snmp.addReadOnlyStaticStringHandler(ch_oid_deviceSerial, sensorSerial);
     snmp.addIntegerHandler(ch_oid_temp, &temperatureValue[sensNum]);
     snmp.addIntegerHandler(ch_oid_status, &statusValue[sensNum]);
 }
@@ -101,13 +101,26 @@ void updateThermalSensorName(char *sensorName, int sensNum)
 {
     int index = snmpIndex[sensNum];
     ValueCallback *vc = nameOid[sensNum];
+    if (vc == nullptr)
+    {
+        // No SNMP index was allocated for this sensor at boot, so there's no name OID to update
+        Serial.printf("No SNMP handler for sensor %d, not updating name\n", sensNum);
+        return;
+    }
     char ch_oid_deviceName[40];
     String oid_deviceName = String(thermalBaseOid) + "2." + String(index);
     oid_deviceName.toCharArray(ch_oid_deviceName, 40);
     Serial.printf("Removing existing snmp handler for index %d", sensNum);
     snmp.removeHandler(vc);
+    // removeHandler() doesn't free the callback, and ValueCallback's destructor isn't virtual,
+    // so delete it as its concrete type to release its string as well. The handler was created
+    // by addReadOnlyStaticStringHandler(), so that is exactly its dynamic type.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
+    delete static_cast<ReadOnlyStringCallback *>(vc);
+#pragma GCC diagnostic pop
     Serial.printf("..and adding value %s to OID %s\n", sensorName, ch_oid_deviceName);
-    nameOid[sensNum] = snmp.addReadOnlyStaticStringHandler(ch_oid_deviceName, sensorName, 40);
+    nameOid[sensNum] = snmp.addReadOnlyStaticStringHandler(ch_oid_deviceName, sensorName);
 }
 void completeSnmpSetup()
 {
