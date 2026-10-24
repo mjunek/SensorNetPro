@@ -17,11 +17,11 @@ It will discover up to 10 devices (configurable in ```prefs.h```), and the embed
 
 Sensors are discovered once, at startup. After adding or replacing a sensor, reboot the device (from the web UI, or by holding the button for 5 seconds) to pick it up. A sensor that is removed while running stays in the SNMP table with a read error status until the next reboot.
 
-The SNMP OID consists of a prefix ```1.3.6.1.4.1.53165.1.1.1``` (enterprises.mortonLights.espThermalMonitor.sensorTable.sensorTableEntry) 
-There are five entries under this table
+The SNMP OID consists of a prefix ```1.3.6.1.4.1.53165.1.1.1``` (enterprises.mortonLights.sensorNetPro.thermalSensorTable.thermalSensorTableEntry)
+There are five columns in this table, each indexed by the sensor's SNMP index (the same value as column 1)
 * ```53165.1.1.1.1``` - SNMP Index for discovery
-* ```53165.1.1.1.2``` - Serial number of sensor
-* ```53165.1.1.1.3``` - Friendly name of sensor
+* ```53165.1.1.1.2``` - Friendly name of sensor
+* ```53165.1.1.1.3``` - Serial number of sensor (the 1-wire ROM address, as 16 hex digits)
 * ```53165.1.1.1.4``` - Temperature in hundredths of degrees Celsius -> This needs to be divided by 100 to get the actual temperature
 * ```53165.1.1.1.5``` - Sensor status: 1 = OK, 2 = read error (the temperature column then holds the last good reading)
 

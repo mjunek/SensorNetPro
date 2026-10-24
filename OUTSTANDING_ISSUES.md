@@ -303,7 +303,8 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
 
 ## Incomplete features and documentation
 
-- **README OID table does not match the code.** The README lists `.2` as the serial and `.3` as the name. The code registers `.2` as the **name** and `.3` as the **serial** (`src/snmp.cpp:78-79`). Decide which is correct before releasing a MIB.
+- ✅ **README OID table does not match the code.** The README lists `.2` as the serial and `.3` as the name. The code registers `.2` as the **name** and `.3` as the **serial** (`src/snmp.cpp:78-79`). Decide which is correct before releasing a MIB.
+  > **Fixed:** kept the firmware's order, so existing SNMP polling keeps working. The README now lists `.2` as the name and `.3` as the serial, and uses the same object names as the code (`sensorNetPro.thermalSensorTable.thermalSensorTableEntry`).
 - **MIB file:** not written yet. The README says "coming".
 - **`BUILDING.md`:** referenced in the README but missing. It should cover the PlatformIO build and the `uploadfs` step for SPIFFS.
 - **Other sensor types:** the 6c4966d commit message describes "pre-work for other sensor types", but none is visible in the code beyond the "thermal" naming.
