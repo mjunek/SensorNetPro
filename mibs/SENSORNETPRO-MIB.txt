@@ -2,7 +2,7 @@ SENSORNETPRO-MIB DEFINITIONS ::= BEGIN
 
 --
 --  Sensor Net Pro
---  Copyright (C) 2023 Michael Junek
+--  Copyright (C) 2023-2026 Michael Junek
 --
 --  This file is part of SensorNetPro.
 --

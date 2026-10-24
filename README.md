@@ -47,7 +47,7 @@ The device's sysObjectID is ```1.3.6.1.4.1.53165.0.1``` (```sensorNetProDevice``
 The project is licensed under the terms of the General Public License v3 as detailed in the LICENSE file
 
 ## Copyright ##
-Copyright © 2023 Michael Junek. 
+Copyright © 2023-2026 Michael Junek. 
 
 ## Building ##
 See [BUILDING.md](BUILDING.md) for building, flashing and updating the firmware and web interface.

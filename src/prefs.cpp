@@ -1,6 +1,6 @@
 /*
  *  Sensor Net Pro
- *  Copyright © 2023 Michael Junek
+ *  Copyright © 2023-2026 Michael Junek
  *
  *  This file is part of SensorNetPro.
  *
