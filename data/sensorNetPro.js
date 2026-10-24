@@ -299,7 +299,7 @@ function setDhcpStatus(status) {
 }
 
 function setWifiStatus(status) {
-  $("#networkWifiModeAp").attr("disabled", !status);
+  $("#networkWifiModeAP").attr("disabled", !status);
   $("#networkWifiModeSta").attr("disabled", !status);
   $("#networkSSID").attr("readonly", !status);
   $("#networkWpaKey").attr("readonly", !status);

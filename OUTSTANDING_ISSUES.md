@@ -257,7 +257,9 @@ Pressing the button for 1 s at runtime reboots the device (`src/main.cpp:866-875
 
 Sensor names and serials are concatenated into HTML without escaping (`data/sensorNetPro.js:89-111`). The status table also renders `name` as HTML. A name containing `"` breaks the input field. The risk is limited because the API requires a login.
 
-#### 21. Wrong element ID
+#### 21. ✅ Wrong element ID
+> **Fixed:** `setWifiStatus()` now targets `#networkWifiModeAP`, so the AP/Station radios are disabled when Wi-Fi is off. The selected mode is still saved, because disabled radios still match `:checked`.
+
 `setWifiStatus()` targets `#networkWifiModeAp`, but the element is `#networkWifiModeAP` (`data/sensorNetPro.js:272`). The AP/Station radio buttons are therefore never disabled when Wi-Fi is turned off.
 
 #### 22. Undeclared variables
