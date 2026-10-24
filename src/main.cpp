@@ -48,6 +48,23 @@ DallasTemperature sensors(&oneWire);
 DeviceAddress *sensorsUnique;
 AsyncWebServer server(80);
 
+// Guards state shared between loop() and the async web / WiFi event tasks:
+// the SNMP agent, preferences, the ch_* config buffers and the sensor arrays.
+SemaphoreHandle_t stateMutex;
+
+class StateLock
+{
+public:
+  StateLock() { xSemaphoreTake(stateMutex, portMAX_DELAY); }
+  ~StateLock() { xSemaphoreGive(stateMutex); }
+};
+
+bool isAuthenticated(AsyncWebServerRequest *request)
+{
+  StateLock lock;
+  return request->authenticate(ch_httpAdminUser, ch_httpAdminPass);
+}
+
 void loadPreferences(bool bypassInit)
 {
   Serial.println("Loading Preferences");
@@ -111,6 +128,7 @@ void loadPreferences(bool bypassInit)
 
 void WiFiEvent(WiFiEvent_t event)
 {
+  StateLock lock;
   switch (event)
   {
   case ARDUINO_EVENT_ETH_START:
@@ -210,6 +228,7 @@ void updateSensorData()
   {
   };
   Serial.println("done, getting values");
+  StateLock lock;
   for (int i = 0; i < countSensors; i++)
   {
     // Read by address so a missing sensor can't shift readings onto other sensors' OIDs
@@ -576,7 +595,7 @@ void apiClearSensorConfiguration(String *responseString, JsonObject *jsonRequest
 
 void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
 {
-  if (!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+  if (!isAuthenticated(request))
     return request->requestAuthentication("SensorNetPro", true);
 
   if (not json.is<JsonObject>())
@@ -591,6 +610,7 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
     return;
   }
 
+  StateLock lock;
   String webAction = reqData["webAction"].as<String>();
   String *jsonResponse = new String();
 
@@ -669,7 +689,7 @@ void initPortal()
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { 
-              if(!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+              if(!isAuthenticated(request))
                 request->requestAuthentication("SensorNetPro", true);
             request->send(SPIFFS, "/index.html", "text/html", false); });
   server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -691,11 +711,11 @@ void initPortal()
   server.on("/sensorNetPro.js", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/sensorNetPro.js", "text/javascript", false); });
   server.on("/reboot.html", HTTP_GET, [](AsyncWebServerRequest *request)
-            { if(!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+            { if(!isAuthenticated(request))
                 request->requestAuthentication("SensorNetPro", true);
                  request->send(SPIFFS, "/reboot.html", "text/html", false); });
   server.on("/reboot.js", HTTP_GET, [](AsyncWebServerRequest *request)
-            {  if(!request->authenticate(ch_httpAdminUser, ch_httpAdminPass))
+            {  if(!isAuthenticated(request))
                 request->requestAuthentication("SensorNetPro", true);
                 request->send(SPIFFS, "/reboot.js", "text/javascript", false); });
   AsyncCallbackJsonWebHandler *apiHandler = new AsyncCallbackJsonWebHandler("/json-api", jsonApiHandler);
@@ -711,6 +731,7 @@ void initPortal()
 void setup()
 {
   Serial.begin(115200);
+  stateMutex = xSemaphoreCreateMutex();
   pinMode(KEY_RESET, INPUT);
   pinMode(WIFI_LED, OUTPUT);
   pinMode(STATUS_LED, OUTPUT);
@@ -858,7 +879,10 @@ void setup()
 
 void loop()
 {
-  snmpAgentLoop();
+  {
+    StateLock lock;
+    snmpAgentLoop();
+  }
   uptime = esp_timer_get_time() / 10000;
   if (prevPoll == 0 || prevPoll + (SENSOR_TIME * 100) <= uptime)
   {

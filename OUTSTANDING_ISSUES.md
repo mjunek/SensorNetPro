@@ -1,6 +1,15 @@
 # SensorNetPro: Outstanding Bugs and Changes
 
-Review of the codebase as of commit `a8375cf` (2026-10-24). The firmware has not been compiled or run on hardware for this review. Items marked **(verify)** depend on library behaviour that should be checked against the installed library version.
+Review of the codebase as of commit `a8375cf` (2026-10-24). Items marked ✅ have since been fixed. Each was fixed in its own commit, and the description of the fix is quoted under the item.
+
+**Build note (2026-10-24):** the repo does **not** build as committed. The unpinned `platform = espressif32` now resolves to 8.0.0 (Arduino-ESP32 v3), and `lib_extra_dirs = /lib` pulls in Linux system headers (see item 19). The fixes were compiled against a scratch copy that changes the following:
+- `platform = espressif32 @ 6.9.0` (Arduino 2.0.17)
+- ArduinoJson 7.4.3
+- ESPAsyncWebServer from git (ESP32Async 3.6.0) with `ESP32Async/AsyncTCP @ 3.5.0`
+- `lib_extra_dirs` removed
+- extra `-I` paths for `WiFi` and `ArduinoJson`, which work around a library-finder (LDF) problem
+
+None of the fixes has been tested on hardware.
 
 ## Project snapshot
 
@@ -57,7 +66,15 @@ A `String` object is passed where a `char*` is expected. This prints garbage and
 
 **Fix:** use `.c_str()`.
 
-### 5. Web handlers race with the main loop
+### 5. ✅ Web handlers race with the main loop
+> **Fixed:** a FreeRTOS mutex (`stateMutex`, taken through the RAII `StateLock` in `src/main.cpp`) now guards the SNMP agent, Preferences, the `ch_*` buffers and the sensor arrays. It is taken by:
+> - `loop()`, around `snmp.loop()` and while it stores sensor results. It is *not* held during the 1-Wire conversion or the Wi-Fi reconnect.
+> - The whole JSON API dispatch.
+> - The auth checks (`isAuthenticated()`).
+> - `WiFiEvent()`.
+>
+> Nothing called while the lock is held waits on the Wi-Fi event task, so the event handler cannot deadlock. This still needs a soak test on hardware: rename sensors repeatedly while an `snmpwalk` loop is running.
+
 ESPAsyncWebServer callbacks run on the `async_tcp` task, while `loop()` runs on the Arduino task. The API handlers change shared state with no locking:
 - They call `snmp.removeHandler()`, `addReadOnlyStaticStringHandler()` and `sortHandlers()` (`apiSaveThermalSensorConfiguration` and `apiSaveSnmpConfiguration`). At the same time, `snmp.loop()` may be walking that same handler list.
 - They call `prefs.end()`/`begin()` inside `commitToPrefs()`.
@@ -123,7 +140,12 @@ It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT I
 
 `ESP.getEfuseMac()` returns a `uint64_t`, but it is formatted with `%x` (`src/snmp.cpp:54`). Use `%llx`.
 
-#### 15. SNMP_Agent API usage needs checking **(verify)**
+#### 15. SNMP_Agent API usage needs checking
+> **Checked against SNMP_Agent 2.1.0:**
+> - `setReadOnlyCommunity`, `setReadWriteCommunity`, `addReadOnlyStaticStringHandler` and `addOIDHandler` all take `const std::string&` and copy the value. Freeing `SysDescr` and using the stack community buffer are therefore safe.
+> - The trailing `40` in `addReadOnlyStaticStringHandler(oid, value, 40)` binds to `bool overwritePrefix`, so the calls pass `true`. This has no effect while no OID prefix is set, but the argument should be removed.
+> - `removeHandler()` does not `delete` the callback, so each rename leaks one `ValueCallback`. This is still open.
+
 - `addReadOnlyStaticStringHandler(oid, sensorName, 40)` (`src/snmp.cpp:91,92,106`): the `40` looks like a buffer length left over from the v1 API. In 2.x it may bind to a `bool` parameter instead.
 - `setReadWriteCommunity()` is given a stack array of length 1.
 - `SysDescr` is `free()`d right after it is registered.
