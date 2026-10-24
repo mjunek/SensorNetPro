@@ -287,7 +287,8 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
   - The static `sensorCount` in `snmp.cpp` is never used.
   - `apiSaveSnmpConfiguration` calls `completeSnmpSetup()` for no effect, because SNMP values only change after a reboot.
   > **Fixed:** removed both, plus an unused `reset` flag in the boot-time factory reset loop that the compiler warned about. `completeSnmpSetup()` only re-sorts the handlers, and that SNMP save adds none.
-- **Wi-Fi AP status:** `wifiConnected` is cleared when any AP client disconnects, even if other clients are still connected.
+- ✅ **Wi-Fi AP status:** `wifiConnected` is cleared when any AP client disconnects, even if other clients are still connected.
+  > **Fixed:** on a client disconnect, `wifiConnected` (and the Wi-Fi LED) now stays set while `WiFi.softAPgetStationNum()` still reports other clients.
 - **Busy-wait in `updateSensorData()`:** `requestTemperatures()` already blocks until conversion completes, so the `while (!isConversionComplete())` loop is redundant. Polling blocks `snmp.loop()` for about 190 ms. Consider `setWaitForConversion(false)` and collecting the results on the next pass.
 - **Sensor discovery:** new sensors are only found at boot. Document this, or add a "rescan" action.
 - **Typos:**

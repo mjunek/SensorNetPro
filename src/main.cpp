@@ -219,8 +219,9 @@ void WiFiEvent(WiFiEvent_t event)
 
   case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
     Serial.println("Wifi AP: Client Disassociated");
+    // Only drop the connected state when the last client has gone
     if (ap_on)
-      wifiConnected = false;
+      wifiConnected = WiFi.softAPgetStationNum() > 0;
     break;
 
   case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
