@@ -156,8 +156,15 @@ AP mode has a related problem. `WiFi.config()` sets the station interface, not t
 - **SNMP and admin settings**: string lengths are not checked. Values are silently truncated to 30 or 13 characters by `toCharArray`.
 - **Sensor names**: not validated at all. This also enables the XSS issue in item 20.
 
-#### 12. Validation limits differ between the UI and the firmware
-> **Partly fixed with item 7:** the UI now requires 8 characters for the admin password, which matches the firmware. The other mismatches remain, and the UI still doesn't show the server's `errorMessage`.
+#### 12. ✅ Validation limits differ between the UI and the firmware
+> **Fixed:** the UI and the firmware now apply the same limits.
+> - **Admin password minimum:** 8 in both. This was changed with item 7.
+> - **Text fields:** every `maxlength="25"` is now 30, matching the 30-character firmware buffers.
+> - **WPA key:** the buffer (`__PREF_WPA_KEY_LEN`) is now 64, and the UI's `maxlength` is 63, so the full WPA2 passphrase range is accepted.
+> - **Admin user name:** sent lowercased, as it is validated.
+> - **Hostname:** the UI now has the same check as the firmware.
+> - **Gateway:** the firmware now accepts an empty gateway, as the UI does (item 11).
+> - **Error messages:** when a save is rejected, the UI now shows the firmware's `errorMessage`, including on HTTP errors.
 
 
 | Field | UI | Firmware |

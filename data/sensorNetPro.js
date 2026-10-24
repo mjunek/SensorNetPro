@@ -300,7 +300,7 @@ function saveSection(section) {
   switch (section) {
     case "admin":
       reqData.webAction = "save-admin";
-      reqData.adminUser = $("#adminUser").val().trim();
+      reqData.adminUser = $("#adminUser").val().toLowerCase().trim();
       reqData.adminPassword = $("#adminPassword").val();
       reqData.modifyAdminPass = $("#modifyAdminPass").is(":checked");
       break;
@@ -394,7 +394,9 @@ function saveSection(section) {
           $("#jsSuccess").hide();
         }, 5000);
       } else {
-        $("#jsErrorText").text("There was an error saving the configuration.");
+        $("#jsErrorText").text(
+          "There was an error saving the configuration: " + responseData.errorMessage
+        );
         $("#jsError").show();
         resetButton.prop("disabled", false);
         saveButton.prop("disabled", false);
@@ -406,7 +408,10 @@ function saveSection(section) {
     },
 
     error: function (error) {
-      $("#jsErrorText").text("There was an error saving the configuration.");
+      let reason = error.responseJSON && error.responseJSON.errorMessage;
+      $("#jsErrorText").text(
+        "There was an error saving the configuration" + (reason ? ": " + reason : ".")
+      );
       $("#jsError").show();
       resetButton.prop("disabled", false);
       saveButton.prop("disabled", false);
@@ -484,9 +489,10 @@ function validate(section) {
       return adminSuccess;
 
     case "network":
+      let hostnameResult = validateHostname();
       let ipResult = validateIpSettings();
       let wifiResult = validateWifiSettings();
-      let networkSuccess = ipResult && wifiResult
+      let networkSuccess = hostnameResult && ipResult && wifiResult
       $("#btnSave_network").prop("disabled", !networkSuccess);
       return networkSuccess;
 
@@ -746,6 +752,17 @@ function validateIpSettings() {
       return false;
   }
   return true;
+}
+
+// Single RFC 1123 label, matching the firmware's isValidHostname()
+function validateHostname() {
+  let hostnameRegex = new RegExp("^[A-Za-z0-9]([A-Za-z0-9-]{0,28}[A-Za-z0-9])?$");
+  if (hostnameRegex.test($("#networkHostname").val().trim())) {
+    $("#networkHostname").removeClass("is-invalid").addClass("is-valid");
+    return true;
+  }
+  $("#networkHostname").addClass("is-invalid").removeClass("is-valid");
+  return false;
 }
 
 function validateWifiSettings() {

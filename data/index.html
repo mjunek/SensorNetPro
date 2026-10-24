@@ -284,10 +284,10 @@
                                             id="modifyCommunity" onChange="setModifyCommunity(this)">
                                         <input id="snmpCommunity" name="snmpCommuntiy"
                                             class="form-control text-form-pass" placeholder="Enter new SNMP community"
-                                            maxlength="25" type="password" disabled onchange="validate('snmp')">
+                                            maxlength="30" type="password" disabled onchange="validate('snmp')">
                                         <input id="snmpCommunityConfirm" name="snmpCommunityConfirm"
                                             class="form-control text-form-passconfirm"
-                                            placeholder="Confirm SNMP community" maxlength="25" type="password" disabled
+                                            placeholder="Confirm SNMP community" maxlength="30" type="password" disabled
                                             onchange="validate('snmp')">
                                         <div class="invalid-feedback" id="snmpCommunityValidateError">Invalid Community
                                             String
@@ -298,19 +298,19 @@
                                     <td width="40%" class="status-table-header text-right"><label for="snmpLocation"
                                             class="col-form-label">Location</label></td>
                                     <td class="status-table-data"><input id="snmpLocation" name="snmpLocation"
-                                            maxlength="25" type="text" class="form-control text-form-input"></td>
+                                            maxlength="30" type="text" class="form-control text-form-input"></td>
                                 </tr>
                                 <tr>
                                     <td width="40%" class="status-table-header text-right"><label for="snmpSysName"
                                             class="col-form-label">System Name</label></td>
                                     <td class="status-table-data"><input id="snmpSysName" name="snmpSysName"
-                                            maxlength="25" type="text" class="form-control text-form-input"></td>
+                                            maxlength="30" type="text" class="form-control text-form-input"></td>
                                 </tr>
                                 <tr>
                                     <td width="40%" class="status-table-header text-right"><label for="snmpContact"
                                             class="col-form-label">Contact</label></td>
                                     <td class="status-table-data"><input id="snmpContact" name="snmpContact"
-                                            maxlength="25" type="text" class="form-control text-form-input"></td>
+                                            maxlength="30" type="text" class="form-control text-form-input"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -341,10 +341,10 @@
                                     <td width="40%" class="status-table-header text-right"><label for="networkHostname"
                                             class="col-form-label">Host Name</label></td>
                                     <td class="status-table-data"><input id="networkHostname" name="networkHostname"
-                                            maxlength="25" onchange="validate('network')" type="text"
+                                            maxlength="30" onchange="validate('network')" type="text"
                                             class="form-control text-form-input">
-                                        <div class="invalid-feedback" id="networkHostnameValidateError">Invalid Hostname
-                                        </div>
+                                        <div class="invalid-feedback" id="networkHostnameValidateError">Host name must be up to 30
+                                            letters, digits or hyphens, and cannot start or end with a hyphen</div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -396,7 +396,7 @@
                                     <td width="40%" class="status-table-header text-right"><label for="networkSSID"
                                             class="col-form-label">SSID</label></td>
                                     <td class="status-table-data"><input id="networkSSID" name="networkSSID"
-                                            maxlength="25" onchange="validate('network')" type="text"
+                                            maxlength="30" onchange="validate('network')" type="text"
                                             class="form-control text-form-input">
                                         <div class="invalid-feedback" id="networkSSIDValidateError">Invalid SSID</div>
                                     </td>
@@ -408,7 +408,7 @@
                                         <input class="form-check-inline ml-2" type="checkbox" name="modifyWpaKey"
                                             id="modifyWpaKey" onChange="setModifyWpaKey(this)">
                                         <input id="networkWpaKey" name="networkWpaKey" onchange="validate('network')"
-                                            maxlength="25" value="" type="password" class="form-control text-form-pass"
+                                            maxlength="63" value="" type="password" class="form-control text-form-pass"
                                             placeholder="Enter new WPA key" disabled>
                                         <div class="valid-feedback" id="networkWpaKeyValidateSuccess"></div>
                                         <div class="invalid-feedback" id="networkWpaKeyValidateError">Invalid WPA Key
@@ -532,10 +532,10 @@
                                         <input class="form-check-inline ml-2" type="checkbox" name="modifyAdminPass"
                                             id="modifyAdminPass" onChange="setModifyAdminPass(this)">
                                         <input id="adminPassword" name="adminPassword" onchange="validate('admin')"
-                                            maxlength="25" type="password" disabled placeholder="Enter new password"
+                                            maxlength="30" type="password" disabled placeholder="Enter new password"
                                             class="form-control text-form-pass">
                                         <input id="adminPasswordConfirm" name="adminPasswordConfirm"
-                                            onchange="validate('admin')" maxlength="25" type="password" disabled
+                                            onchange="validate('admin')" maxlength="30" type="password" disabled
                                             placeholder="Confirm new password"
                                             class="form-control text-form-passconfirm">
                                         <div class="invalid-feedback" id="adminPasswordValidateError">Invalid Password

@@ -108,7 +108,7 @@
 #define __PREF_SSID_LEN 31
 
 #define __PREF_WPA_KEY "wpa"
-#define __PREF_WPA_KEY_LEN 31
+#define __PREF_WPA_KEY_LEN 64
 
 #define __PREF_COMMUNITY "comm"
 #define __PREF_COMMUNITY_LEN 31
