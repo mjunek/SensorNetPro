@@ -134,7 +134,24 @@ AP mode has a related problem. `WiFi.config()` sets the station interface, not t
 
 ### Firmware
 
-#### 11. No server-side input validation
+#### 11. ✅ No server-side input validation
+> **Fixed:** every save handler now validates the whole request before writing anything, and returns a specific `errorMessage`. The rules match the web UI. The validators are in the "Input validation" block in `src/main.cpp`, and a host-side unit test of them passes.
+>
+> | Field | Rule |
+> |---|---|
+> | Hostname | A single RFC 1123 label of 1–30 characters |
+> | SSID | 1–30 printable ASCII characters (may be empty when Wi-Fi is off) |
+> | WPA key | Empty (open network) or 8 to the buffer limit, printable ASCII |
+> | Ethernet static IP | Parsed and validated only when DHCP is off. The mask must be contiguous. The IP cannot be the subnet or broadcast address. The gateway may be empty; if set, it must be in the subnet. With DHCP on, values that don't parse are not saved. |
+> | Admin user | 3–10 lowercase letters |
+> | Admin password | 8–30 printable ASCII characters, not equal to the user name |
+> | SNMP community | 1–30 printable ASCII characters |
+> | SNMP name, location, contact | Up to 30 printable ASCII characters |
+> | Sensor names | The UI's rule: 2–35 characters, alphanumeric at both ends, with `@-/_=+.` and spaces in between |
+> | Sensor count | Limited to `__MAX_SENSOR_COUNT` |
+>
+> **Note:** the README's example name "Rack 1G, Front" has a comma, which both the UI and the firmware reject.
+
 - **Network settings**: `IPAddress::fromString()` failures are ignored, so `0.0.0.0` is saved. Hostname characters and length are not checked.
 - **SNMP and admin settings**: string lengths are not checked. Values are silently truncated to 30 or 13 characters by `toCharArray`.
 - **Sensor names**: not validated at all. This also enables the XSS issue in item 20.

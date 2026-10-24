@@ -258,6 +258,105 @@ void updateSensorData()
   Serial.println();
 }
 
+/*
+ * Input validation for the JSON API. The web UI applies the same rules, but the API can't
+ * rely on it: everything saved here ends up in NVS, the SNMP agent and the web page.
+ */
+#define __SENSOR_NAME_MAX_LEN 35
+
+void apiError(JsonDocument *jsonDoc, String *responseString, const char *message)
+{
+  (*jsonDoc)["error"] = true;
+  (*jsonDoc)["errorMessage"] = message;
+  serializeJson(*jsonDoc, *responseString);
+}
+
+bool isLengthBetween(const String &value, unsigned int minLen, unsigned int maxLen)
+{
+  return value.length() >= minLen && value.length() <= maxLen;
+}
+
+// Printable ASCII only, so stored values can't carry control characters into logs, SNMP or the UI
+bool isPrintableAscii(const String &value)
+{
+  for (unsigned int i = 0; i < value.length(); i++)
+  {
+    if (value[i] < 0x20 || value[i] > 0x7e)
+      return false;
+  }
+  return true;
+}
+
+// Single RFC 1123 label: letters, digits and hyphens, not starting or ending with a hyphen
+bool isValidHostname(const String &hostname)
+{
+  if (!isLengthBetween(hostname, 1, __PREF_HOSTNAME_LEN - 1) || hostname[0] == '-' || hostname[hostname.length() - 1] == '-')
+    return false;
+  for (unsigned int i = 0; i < hostname.length(); i++)
+  {
+    if (!isalnum(hostname[i]) && hostname[i] != '-')
+      return false;
+  }
+  return true;
+}
+
+// 3 to 10 lowercase letters, matching the web UI
+bool isValidAdminUser(const String &user)
+{
+  if (!isLengthBetween(user, 3, 10))
+    return false;
+  for (unsigned int i = 0; i < user.length(); i++)
+  {
+    if (user[i] < 'a' || user[i] > 'z')
+      return false;
+  }
+  return true;
+}
+
+// Letters and digits at both ends, with @ - / _ = + . and spaces allowed in between, matching the web UI
+bool isValidSensorName(const String &name)
+{
+  if (!isLengthBetween(name, 2, __SENSOR_NAME_MAX_LEN) || !isalnum(name[0]) || !isalnum(name[name.length() - 1]))
+    return false;
+  for (unsigned int i = 0; i < name.length(); i++)
+  {
+    if (!isalnum(name[i]) && !strchr("@-/_=+. ", name[i]))
+      return false;
+  }
+  return true;
+}
+
+uint32_t ipToUint(const IPAddress &ip)
+{
+  return ((uint32_t)ip[0] << 24) | ((uint32_t)ip[1] << 16) | ((uint32_t)ip[2] << 8) | ip[3];
+}
+
+// Checks the Ethernet static IP settings. An empty gateway is allowed and stored as 0.0.0.0.
+// Returns nullptr if valid, otherwise the error message.
+const char *validateStaticIp(const String &ipString, const String &maskString, const String &gatewayString,
+                             IPAddress &ip, IPAddress &mask, IPAddress &gateway)
+{
+  if (!ip.fromString(ipString) || ip[0] == 0)
+    return "Invalid IP address";
+  uint32_t maskValue;
+  if (!mask.fromString(maskString) || (maskValue = ipToUint(mask)) == 0 || (~maskValue & (~maskValue + 1)) != 0)
+    return "Invalid subnet mask";
+  uint32_t ipValue = ipToUint(ip);
+  if ((ipValue & ~maskValue) == 0 || (ipValue | maskValue) == 0xFFFFFFFF)
+    return "IP address cannot be the subnet or broadcast address";
+  gateway = IPAddress(0, 0, 0, 0);
+  if (gatewayString == "")
+    return nullptr;
+  if (!gateway.fromString(gatewayString))
+    return "Invalid gateway";
+  uint32_t gatewayValue = ipToUint(gateway);
+  if ((gatewayValue & maskValue) != (ipValue & maskValue))
+    return "Gateway must be on the same subnet as the IP address";
+  if ((gatewayValue & ~maskValue) == 0 || (gatewayValue | maskValue) == 0xFFFFFFFF || gatewayValue == ipValue)
+    return "Gateway cannot be the subnet, broadcast or device address";
+  return nullptr;
+}
+
 void apiReboot(String *responseString, JsonObject *jsonRequest)
 {
   JsonDocument jsonDoc;
@@ -408,20 +507,18 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
     serializeJson(jsonDoc, *responseString);
     return;
   }
-  if (modifyAdminPass)
-  {
-    String adminPassword = (*jsonRequest)["adminPassword"].as<String>();
-    if (adminPassword == "" || adminPassword.length() < 8)
-    {
-      jsonDoc["error"] = true;
-      jsonDoc["errorMessage"] = "Invalid Admin Password";
-      serializeJson(jsonDoc, *responseString);
-      return;
-    }
-    writeHttpPassword(adminPassword);
-  }
-
   String adminUser = (*jsonRequest)["adminUser"].as<String>();
+  if (!isValidAdminUser(adminUser))
+    return apiError(&jsonDoc, responseString, "User name must be 3 to 10 lowercase letters");
+
+  String adminPassword = (*jsonRequest)["adminPassword"].as<String>();
+  if (modifyAdminPass && (!isLengthBetween(adminPassword, 8, __PREF_ADMIN_PASS_LEN - 1) || !isPrintableAscii(adminPassword)))
+    return apiError(&jsonDoc, responseString, "Password must be 8 to 30 printable ASCII characters");
+  if (modifyAdminPass && adminPassword.equalsIgnoreCase(adminUser))
+    return apiError(&jsonDoc, responseString, "Password cannot match the user name");
+
+  if (modifyAdminPass)
+    writeHttpPassword(adminPassword);
   writeHttpUser(adminUser);
 
   commitToPrefs(false);
@@ -455,13 +552,18 @@ void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest
   String networkSSID = (*jsonRequest)["networkSSID"].as<String>();
   String networkWpaKey = (*jsonRequest)["networkWpaKey"].as<String>();
 
-  if ((!networkDhcp && (networkIP == "" || networkMask == "" || networkGateway == "")) || networkWifi && (networkSSID == ""))
-  {
-    jsonDoc["error"] = true;
-    jsonDoc["errorMessage"] = "Invalid request, not all parameters supplied.";
-    serializeJson(jsonDoc, *responseString);
-    return;
-  }
+  if (!isValidHostname(networkHostname))
+    return apiError(&jsonDoc, responseString, "Hostname must be 1 to 30 letters, digits or hyphens, and cannot start or end with a hyphen");
+  if (!isLengthBetween(networkSSID, networkWifi ? 1 : 0, min(32, __PREF_SSID_LEN - 1)) || !isPrintableAscii(networkSSID))
+    return apiError(&jsonDoc, responseString, "Wi-Fi SSID must be 1 to 30 printable ASCII characters");
+  if (modifyWpaKey && networkWpaKey != "" && (!isLengthBetween(networkWpaKey, 8, min(63, __PREF_WPA_KEY_LEN - 1)) || !isPrintableAscii(networkWpaKey)))
+    return apiError(&jsonDoc, responseString, "Invalid WPA key length or characters");
+
+  // With DHCP on, the static settings are kept for later but only saved if they parse
+  IPAddress ip, mask, gw;
+  const char *ipError = validateStaticIp(networkIP, networkMask, networkGateway, ip, mask, gw);
+  if (!networkDhcp && ipError != nullptr)
+    return apiError(&jsonDoc, responseString, ipError);
 
   if (modifyWpaKey)
   {
@@ -473,17 +575,12 @@ void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest
   writeSSID(networkSSID);
   writeWirelesEnabled(networkWifi);
 
-  IPAddress ip;
-  ip.fromString(networkIP);
-  writeIPAddress(ip[0], ip[1], ip[2], ip[3]);
-
-  IPAddress mask;
-  mask.fromString(networkMask);
-  writeSubnetMask(mask[0], mask[1], mask[2], mask[3]);
-
-  IPAddress gw;
-  gw.fromString(networkGateway);
-  writeDefaultGateway(gw[0], gw[1], gw[2], gw[3]);
+  if (ipError == nullptr)
+  {
+    writeIPAddress(ip[0], ip[1], ip[2], ip[3]);
+    writeSubnetMask(mask[0], mask[1], mask[2], mask[3]);
+    writeDefaultGateway(gw[0], gw[1], gw[2], gw[3]);
+  }
 
   commitToPrefs(false);
   loadPreferences(true);
@@ -514,23 +611,22 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
     serializeJson(jsonDoc, *responseString);
     return;
   }
-  if (modifyCommunity)
-  {
-    String snmpCommunity = (*jsonRequest)["snmpCommunity"].as<String>();
-    if (snmpCommunity == "")
-    {
-      jsonDoc["error"] = true;
-      jsonDoc["errorMessage"] = "Invalid SNMP community string";
-      serializeJson(jsonDoc, *responseString);
-      return;
-    }
-    writeSnmpCommunity(snmpCommunity);
-  }
-
+  String snmpCommunity = (*jsonRequest)["snmpCommunity"].as<String>();
   String snmpSysName = (*jsonRequest)["snmpSysName"].as<String>();
   String snmpLocation = (*jsonRequest)["snmpLocation"].as<String>();
   String snmpContact = (*jsonRequest)["snmpContact"].as<String>();
 
+  if (modifyCommunity && (!isLengthBetween(snmpCommunity, 1, __PREF_COMMUNITY_LEN - 1) || !isPrintableAscii(snmpCommunity)))
+    return apiError(&jsonDoc, responseString, "Community string must be 1 to 30 printable ASCII characters");
+  if (!isLengthBetween(snmpSysName, 0, __PREF_SNMP_SYSNAME_LEN - 1) || !isPrintableAscii(snmpSysName))
+    return apiError(&jsonDoc, responseString, "System name must be at most 30 printable ASCII characters");
+  if (!isLengthBetween(snmpLocation, 0, __PREF_SNMP_SYSLOCATION_LEN - 1) || !isPrintableAscii(snmpLocation))
+    return apiError(&jsonDoc, responseString, "Location must be at most 30 printable ASCII characters");
+  if (!isLengthBetween(snmpContact, 0, __PREF_SNMP_SYSCONTACT_LEN - 1) || !isPrintableAscii(snmpContact))
+    return apiError(&jsonDoc, responseString, "Contact must be at most 30 printable ASCII characters");
+
+  if (modifyCommunity)
+    writeSnmpCommunity(snmpCommunity);
   writeSnmpContact(snmpContact);
   writeSnmpSysName(snmpSysName);
   writeSnmpLocation(snmpLocation);
@@ -560,6 +656,8 @@ void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonR
     return;
   }
   int sensorCount = (*jsonRequest)["sensorCount"].as<int>();
+  if (sensorCount < 0 || sensorCount > __MAX_SENSOR_COUNT)
+    return apiError(&jsonDoc, responseString, "Invalid sensor count");
   for (int i = 1; i <= sensorCount; i++)
   {
     if (not(*jsonRequest)["sensorName_" + String(i)].is<String>() || not(*jsonRequest)["sensorSerial_" + String(i)].is<String>())
@@ -570,6 +668,12 @@ void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonR
     }
     String sensAddr = (*jsonRequest)["sensorSerial_" + String(i)].as<String>();
     String sensName = (*jsonRequest)["sensorName_" + String(i)].as<String>();
+    if (!isValidSensorName(sensName))
+    {
+      jsonDoc["error"] = true;
+      jsonDoc["errorMessage"] = "Sensor names must be 2 to 35 characters: letters and digits, with @ - / _ = + . and spaces in between";
+      continue;
+    }
     Serial.printf("UpdateSensorName: Processing serial: %s with new name %s\n", sensAddr.c_str(), sensName.c_str());
     int sensNum = 0;
     bool found = false;
