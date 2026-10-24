@@ -31,7 +31,6 @@ const char *thermalBaseOid = ".1.3.6.1.4.1.53165.1.1.1."; // Base table oid for 
 
 SNMPAgent snmp = SNMPAgent();
 WiFiUDP udp;
-int sensorCount = 0;
 ValueCallback *nameOid[__MAX_SENSOR_COUNT];
 int snmpIndex[__MAX_SENSOR_COUNT];
 
@@ -65,7 +64,6 @@ void addThermalSensorHandler(char *sensorSerial, char *sensorName, int *temperat
 {
     String oid_deviceIndex, oid_deviceName, oid_deviceSerial, oid_temp, oid_status;
     char ch_oid_deviceIndex[40], ch_oid_deviceName[40], ch_oid_deviceSerial[40], ch_oid_temp[40], ch_oid_status[40];
-    sensorCount++;
     Serial.println("++ Adding SNMP Thermal Sensor handler");
     int index = getSnmpIndex(sensorSerial);
     if (index < 1)

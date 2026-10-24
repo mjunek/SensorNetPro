@@ -283,9 +283,10 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
 
 - ✅ **Reboot response:** `apiReboot()` restarts before the response is sent. `reboot.js` still works through its error/poll fallback, but deferring the restart (set a flag and act on it in `loop()`) would give a clean response.
   > **Fixed:** `apiReboot()` now only records the request, and `loop()` restarts a second later, once the response has gone out. On a successful response `reboot.js` now waits and polls `status` until the device is back, instead of going straight to `/` while the device is still restarting.
-- **Unused code:**
+- ✅ **Unused code:**
   - The static `sensorCount` in `snmp.cpp` is never used.
   - `apiSaveSnmpConfiguration` calls `completeSnmpSetup()` for no effect, because SNMP values only change after a reboot.
+  > **Fixed:** removed both, plus an unused `reset` flag in the boot-time factory reset loop that the compiler warned about. `completeSnmpSetup()` only re-sorts the handlers, and that SNMP save adds none.
 - **Wi-Fi AP status:** `wifiConnected` is cleared when any AP client disconnects, even if other clients are still connected.
 - **Busy-wait in `updateSensorData()`:** `requestTemperatures()` already blocks until conversion completes, so the `while (!isConversionComplete())` loop is redundant. Polling blocks `snmp.loop()` for about 190 ms. Consider `setWaitForConversion(false)` and collecting the results on the next pass.
 - **Sensor discovery:** new sensors are only found at boot. Document this, or add a "rescan" action.

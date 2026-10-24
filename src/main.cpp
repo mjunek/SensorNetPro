@@ -95,7 +95,6 @@ void loadPreferences(bool bypassInit)
       digitalWrite(STATUS_LED, 0);
       digitalWrite(ERROR_LED, 0);
       Serial.println("Factory reset button held at startup. Resetting after 5 seconds");
-      bool reset = false;
       bool done = false;
       int count = 0;
       while (!done)
@@ -644,7 +643,6 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
   jsonDoc["restartRequired"] = true;
   settingsRebootNeeded = true;
   loadPreferences(true);
-  completeSnmpSetup();
 
   apiGetConfiguration(&jsonDoc, false, true, false);
   serializeJson(jsonDoc, *responseString);
