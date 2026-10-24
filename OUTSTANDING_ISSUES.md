@@ -250,7 +250,11 @@ Pressing the button for 1 s at runtime reboots the device (`src/main.cpp:866-875
 
 ### Web UI
 
-#### 20. Stored XSS through sensor names
+#### 20. ✅ Stored XSS through sensor names
+> **Fixed:** sensor names and serials now go through `escapeHtml()` wherever the web UI inserts them into HTML: the status table, the config table labels and inputs, and the `data-serial` attribute. The firmware also rejects such names (item 11), so this is defence in depth.
+> - **Serial read-back:** the serial is now read back with `.attr("data-serial")`. jQuery's `.data()` turned all-digit serials into numbers, which the firmware then rejected.
+> - **Testing:** the UI test now feeds hostile names and serials. The old code fails the injection checks, and the fixed code passes.
+
 Sensor names and serials are concatenated into HTML without escaping (`data/sensorNetPro.js:89-111`). The status table also renders `name` as HTML. A name containing `"` breaks the input field. The risk is limited because the API requires a login.
 
 #### 21. Wrong element ID

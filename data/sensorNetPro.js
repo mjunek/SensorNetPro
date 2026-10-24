@@ -17,6 +17,16 @@ sectionFields.network = [
 ];
 sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
 
+// Sensor names and serials come from the device and are inserted into HTML, so escape them
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 let thermalSensorTable = $("#thermalSensorTable").DataTable({
   autoWidth: false,
   deferLoading: 0,
@@ -49,6 +59,12 @@ let thermalSensorTable = $("#thermalSensorTable").DataTable({
   ],
   columnDefs: [
     { targets: 0, data: "id", visible: false },
+    {
+      targets: [1, 2],
+      render: function (data, type, row, meta) {
+        return escapeHtml(data);
+      },
+    },
     {
       targets: 3,
       render: function (data, type, row, meta) {
@@ -92,9 +108,9 @@ let thermalSensorConfigTable = $("#thermalSensorConfigTable").DataTable({
       render: function (data, type, row, meta) {
         return (
           '<label for="thermalSensorName' +
-          row.id +
+          escapeHtml(row.id) +
           '" class="col-form-label">' +
-          data +
+          escapeHtml(data) +
           "</label>"
         );
       },
@@ -105,13 +121,13 @@ let thermalSensorConfigTable = $("#thermalSensorConfigTable").DataTable({
       render: function (data, type, row, meta) {
         return (
           '<input type="text" id="thermalSensorName' +
-          row.id +
+          escapeHtml(row.id) +
           '" name="thermalSensorName' +
-          row.id +
+          escapeHtml(row.id) +
           '" value="' +
-          data +
+          escapeHtml(data) +
           '" maxlength="35" data-serial="' +
-          row.address +
+          escapeHtml(row.address) +
           '" class="form-control text-form-input" onchange="validateBox(this)"/>'
         );
       },
@@ -350,7 +366,7 @@ function saveSection(section) {
       for (i = 1; i <= rowCount; i++) {
         let boxId = "#thermalSensorName" + i;
         let sensorName = $(boxId).val();
-        let sensorSerial = $(boxId).data("serial");
+        let sensorSerial = $(boxId).attr("data-serial");
         reqData["sensorName_" + i] = sensorName;
         reqData["sensorSerial_" + i] = sensorSerial;
       }
@@ -569,7 +585,7 @@ function validateSensor(boxName) {
   let boxId = "#" + boxName;
 
   let sensorName = $(boxId).val().trim();
-  let sensorSerial = $(boxId).data("serial");
+  let sensorSerial = $(boxId).attr("data-serial");
   $(boxId).removeClass("is-valid").removeClass("is-invalid");
   if (sensorName == "") sensorName = sensorSerial;
   $(boxId).val(sensorName);
