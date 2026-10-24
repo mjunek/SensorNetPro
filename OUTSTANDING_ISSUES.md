@@ -23,7 +23,9 @@ Review of the codebase as of commit `a8375cf` (2026-10-24). The firmware has not
 
 The only way out is the hardware reset button. **Fix:** change the default to `false`.
 
-### 2. Buffer overflow when more than 10 sensors are on the bus
+### 2. ✅ Buffer overflow when more than 10 sensors are on the bus
+> **Fixed:** `setup()` now limits `countSensors` to `__MAX_SENSOR_COUNT` and logs a warning. `temperaturec[]` is now sized from `__MAX_SENSOR_COUNT`, and the unused `temperaturef[]` has been removed. Any sensors beyond the limit are ignored.
+
 `countSensors = sensors.getDeviceCount()` (`src/main.cpp:806`) has no upper limit. These arrays are all sized at `__MAX_SENSOR_COUNT` or 10, and are written past their end when more sensors are present:
 - `sensorAddress[]`, `sensorName[]`, `snmpTemperature[]`
 - `nameOid[]` and `snmpIndex[]` in `snmp.cpp`

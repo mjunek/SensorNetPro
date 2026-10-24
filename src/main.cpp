@@ -202,7 +202,7 @@ void WiFiEvent(WiFiEvent_t event)
 
 void updateSensorData()
 {
-  float temperaturec[10], temperaturef[10];
+  float temperaturec[__MAX_SENSOR_COUNT];
 
   Serial.print("Requesting sensor data...");
   sensors.requestTemperatures();
@@ -805,6 +805,11 @@ void setup()
   sensors.setResolution(__DS18B20_RESOLUTION);
   countSensors = sensors.getDeviceCount();
   Serial.println("Found " + String(countSensors) + " sensors");
+  if (countSensors > __MAX_SENSOR_COUNT)
+  {
+    Serial.printf("Too many sensors, only the first %d will be used\n", __MAX_SENSOR_COUNT);
+    countSensors = __MAX_SENSOR_COUNT;
+  }
   sensorsUnique = new DeviceAddress[countSensors];
 
   initialiseSnmp(ch_snmpCommunity, &uptime, ch_snmpSysContact, ch_snmpSysName, ch_snmpLocation);
