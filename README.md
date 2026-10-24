@@ -31,7 +31,10 @@ DS18B20 temperature sensors are the only type supported so far, but the firmware
 2. Give it the next free table number, and add its table to the MIB.
 3. Show it in the web UI. The JSON API already lists each type's sensors under ```<type>SensorData```, but the page only displays ```thermalSensorData``` today.
 
+### Hardware ###
+The wiring for the sensors, button and LEDs on each board is in [electronics/README.md](electronics/README.md). A carrier PCB is planned, but its KiCad design hasn't been started.
 
+## MIB ##
 The MIB is in ```mibs/SENSORNETPRO-MIB.txt```. Copy it into your SNMP manager's MIB directory to see named objects (for example ```thermalSensorTemperature```) instead of numeric OIDs. With net-snmp:
 
 ```
@@ -60,5 +63,10 @@ Once the default admin password has been changed, the device can be updated over
 
 Devices flashed before OTA support was added need one USB upload of both the firmware and the filesystem, because the partition table changed. Settings are kept. See [BUILDING.md](BUILDING.md).
 
-## Updates ##
-_Update 2023-Oct-10:_ Initial commit to repository is NOT YET complete. There is some seriously broken code in here.
+## Status ##
+_Updated 2026-Oct-24:_ The firmware is feature complete for DS18B20 temperature monitoring over SNMP, with web configuration and network updates. The serious bugs from the initial commit have been fixed (see [OUTSTANDING_ISSUES.md](OUTSTANDING_ISSUES.md)), and it builds for both boards on Arduino-ESP32 3.3.
+
+Still to do:
+* Test the current firmware on real hardware. The recent fixes have been checked by building and by host-side tests, not yet on a device.
+* Confirm the WT32-ETH01 pin map, which is provisional.
+* Design the carrier PCB (see [electronics/README.md](electronics/README.md)).
