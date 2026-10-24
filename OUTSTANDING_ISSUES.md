@@ -13,7 +13,9 @@ Review of the codebase as of commit `a8375cf` (2026-10-24). The firmware has not
 
 ## Critical
 
-### 1. Fresh devices never load the factory defaults
+### 1. ✅ Fresh devices never load the factory defaults
+> **Fixed:** `getConfigured()` now defaults to `false`, so a blank NVS triggers `resetToDefaults()` on first boot. Devices that have saved settings are not affected, because every save writes `confdone = true`.
+
 `getConfigured()` returns `true` when the key is missing (`src/prefs.cpp:246`). As a result, `loadPreferences()` never calls `resetToDefaults()` on first boot (`src/main.cpp:90`). Every other value then falls back to the Preferences zero defaults:
 - `dhcp` = false, so the static IP is set to `0.0.0.0/0.0.0.0`.
 - `ap` = false, so the device starts in **station** mode and tries to join SSID `SensorNetPro` with an empty key.

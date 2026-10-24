@@ -243,7 +243,7 @@ void getHttpPassword(char httppassword[__PREF_ADMIN_PASS_LEN])
 
 bool getConfigured()
 {
-    bool ret = prefs.getBool(__PREF_CONFIGURED, true);
+    bool ret = prefs.getBool(__PREF_CONFIGURED, false);
     Serial.printf("PREFS: getConfigured() returns - %d\n", ret);
     return ret;
 }
