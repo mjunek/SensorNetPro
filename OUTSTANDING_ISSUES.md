@@ -291,7 +291,8 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
   > **Fixed:** on a client disconnect, `wifiConnected` (and the Wi-Fi LED) now stays set while `WiFi.softAPgetStationNum()` still reports other clients.
 - ✅ **Busy-wait in `updateSensorData()`:** `requestTemperatures()` already blocks until conversion completes, so the `while (!isConversionComplete())` loop is redundant. Polling blocks `snmp.loop()` for about 190 ms. Consider `setWaitForConversion(false)` and collecting the results on the next pass.
   > **Fixed:** conversions now run in the background (`setWaitForConversion(false)`). `loop()` starts one every `SENSOR_TIME` with `requestSensorData()`, keeps serving SNMP, the button and the LEDs, and collects the readings with `updateSensorData()` once `millisToWaitForConversion()` (188 ms at 10-bit) has passed. Waiting a fixed time, rather than polling the bus, also works with parasite-powered sensors.
-- **Sensor discovery:** new sensors are only found at boot. Document this, or add a "rescan" action.
+- ✅ **Sensor discovery:** new sensors are only found at boot. Document this, or add a "rescan" action.
+  > **Fixed (documented):** the README and the sensor configuration page now say that sensors are found at startup, and to reboot after adding or replacing one. A live rescan would still need the SNMP table rebuilt, which the agent only supports cleanly at boot, so a reboot is the simpler path.
 - **Typos:**
   - `writeWirelesEnabled`
   - "librbary", "Oveview", "hundreths" (README)

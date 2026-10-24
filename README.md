@@ -15,6 +15,8 @@ The default mode is set automatically on first boot within the Preferences librb
 The platform supports the Dallas 1-wire DS18B20 sensor set (https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf)
 It will discover up to 10 devices (configurable in ```prefs.h```), and the embedded 1-wire serial numbers are stored within the preferences to ensure consistent SNMP indexes within the table. Up to 20 devices are remembered. These can also be named with a friendly name, so that display shows something reasonable such as "Rack 1G, Front"
 
+Sensors are discovered once, at startup. After adding or replacing a sensor, reboot the device (from the web UI, or by holding the button for 5 seconds) to pick it up. A sensor that is removed while running stays in the SNMP table with a read error status until the next reboot.
+
 The SNMP OID consists of a prefix ```1.3.6.1.4.1.53165.1.1.1``` (enterprises.mortonLights.espThermalMonitor.sensorTable.sensorTableEntry) 
 There are five entries under this table
 * ```53165.1.1.1.1``` - SNMP Index for discovery
