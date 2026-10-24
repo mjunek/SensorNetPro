@@ -502,6 +502,10 @@
         </div>
 
         <div id="adminPanel" class="my-3" style="display: none;">
+            <div id="passwordChangeNotice" class="row px-3" style="display: none;">
+                <div class="col-12 alert alert-warning" role="alert">The default admin password is still in use.
+                    Set a new password to continue.</div>
+            </div>
             <div class="ui-section">
                 <div class="row ui-section-header">
                     <div class="col-12 text-center">Admin User</div>
@@ -552,7 +556,7 @@
                     </div>
                 </div>
             </div>
-            <div class="ui-section">
+            <div id="adminConfigReset" class="ui-section">
                 <div class="row ui-section-header">
                     <div class="col-12 text-center">Configuration Reset</div>
                 </div>

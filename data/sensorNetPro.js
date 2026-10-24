@@ -2,6 +2,7 @@ let ajaxBase = "/json-api";
 let currentSection;
 let statusRefreshTimer;
 let config;
+let passwordChangeRequired = false;
 const sectionFields = new Object();
 sectionFields.admin = ["adminUser"];
 sectionFields.network = [
@@ -18,6 +19,7 @@ sectionFields.snmp = ["snmpLocation", "snmpSysName", "snmpContact"];
 
 let thermalSensorTable = $("#thermalSensorTable").DataTable({
   autoWidth: false,
+  deferLoading: 0,
   lengthChange: false,
   info: false,
   processing: false,
@@ -59,6 +61,7 @@ let thermalSensorTable = $("#thermalSensorTable").DataTable({
 
 let thermalSensorConfigTable = $("#thermalSensorConfigTable").DataTable({
   autoWidth: false,
+  deferLoading: 0,
   lengthChange: false,
   info: false,
   processing: false,
@@ -360,6 +363,14 @@ function saveSection(section) {
         for (field in sectionFields[section]) {
           config[sectionFields[section][field]] = responseData[sectionFields[section][field]];
         }
+        if (section == "admin" && reqData.modifyAdminPass) {
+          $("#jsSuccessText").text("Password changed. Please log in again with the new password.");
+          $("#jsSuccess").show();
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+          return;
+        }
         resetSection(section, true);
         resetButton.prop("disabled", false);
         saveButton.prop("disabled", false);
@@ -421,13 +432,16 @@ function validate(section) {
         $("#adminUser").removeClass("is-invalid").addClass("is-valid");
       }
 
-      if (!modifyAdminPass) {
+      if (!modifyAdminPass && passwordChangeRequired) {
+        adminSuccess = false;
+      }
+      else if (!modifyAdminPass) {
         $("#adminPassword").removeClass("is-invalid").removeClass("is-valid");
         $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
       }
-      else if (adminPassword.length < 6) {
+      else if (adminPassword.length < 8) {
         $("#adminPassword").addClass("is-invalid").removeClass("is-valid");
-        $("#adminPasswordValidateError").text("Password must be at least 6 characters");
+        $("#adminPasswordValidateError").text("Password must be at least 8 characters");
         adminSuccess = false;
       }
       else if (adminPassword.toUpperCase() == adminUser.toUpperCase()) {
@@ -824,7 +838,9 @@ function resetSection(section, force) {
       $("#adminPasswordConfirm").val("");
       $("#adminPasswordConfirm").removeClass("is-invalid").removeClass("is-valid");
       $("#adminPasswordConfirm").prop("disabled", true);
-      $("#modifyAdminPass").prop("checked", false);
+      $("#modifyAdminPass").prop("checked", passwordChangeRequired);
+      $("#modifyAdminPass").prop("disabled", passwordChangeRequired);
+      setModifyAdminPass($("#modifyAdminPass")[0]);
       break;
     case "thermal":
       thermalSensorConfigTable.ajax.reload();
@@ -846,15 +862,23 @@ function getConfig() {
     success: function (responseData) {
       if (responseData.error == false) {
         config = responseData;
+        passwordChangeRequired = responseData.adminPasswordChangeRequired;
         resetSection("admin", true);
         resetSection("snmp", true);
         resetSection("network", true);
+        if (passwordChangeRequired) {
+          lockToPasswordChange();
+        } else {
+          thermalSensorConfigTable.ajax.reload();
+          showSection("info");
+        }
       } else {
         $("#jsErrorText").text("There was an error getting the configuration.");
         $("#jsError").show();
         setTimeout(() => {
           $("#jsError").hide();
         }, 5000);
+        showSection("info");
       }
     },
     error: function (error) {
@@ -863,6 +887,7 @@ function getConfig() {
       setTimeout(() => {
         $("#jsError").hide();
       }, 5000);
+      showSection("info");
     },
   });
 }
@@ -987,5 +1012,12 @@ function clearSensorConfig() {
   }
 }
 
+// The device is locked to the Admin tab until the factory default password is changed
+function lockToPasswordChange() {
+  $("nav button").not("#btnNavAdmin").prop("disabled", true);
+  $("#adminConfigReset").hide();
+  $("#passwordChangeNotice").show();
+  showSection("admin");
+}
+
 getConfig();
-showSection("info");

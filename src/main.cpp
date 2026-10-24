@@ -59,6 +59,12 @@ public:
   ~StateLock() { xSemaphoreGive(stateMutex); }
 };
 
+// The API is limited to changing the admin password until the factory default is replaced
+bool adminPasswordIsDefault()
+{
+  return strcmp(ch_httpAdminPass, __DEF_ADMIN_PASS) == 0;
+}
+
 bool isAuthenticated(AsyncWebServerRequest *request)
 {
   StateLock lock;
@@ -352,6 +358,7 @@ void apiGetConfiguration(JsonDocument *jsonDoc, bool network, bool snmp, bool ad
   if (admin)
   {
     (*jsonDoc)["adminUser"] = ch_httpAdminUser;
+    (*jsonDoc)["adminPasswordChangeRequired"] = adminPasswordIsDefault();
   }
   if (snmp)
   {
@@ -376,6 +383,13 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
     return;
   }
   bool modifyAdminPass = (*jsonRequest)["modifyAdminPass"].as<bool>();
+  if (!modifyAdminPass && adminPasswordIsDefault())
+  {
+    jsonDoc["error"] = true;
+    jsonDoc["errorMessage"] = "The default admin password must be changed";
+    serializeJson(jsonDoc, *responseString);
+    return;
+  }
   if (modifyAdminPass && not(*jsonRequest)["adminPassword"].is<String>())
   {
     jsonDoc["error"] = true;
@@ -612,6 +626,11 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
 
   StateLock lock;
   String webAction = reqData["webAction"].as<String>();
+  if (adminPasswordIsDefault() && webAction != "config" && webAction != "save-admin")
+  {
+    request->send(403, "application/json", "{ \"errorMessage\": \"The default admin password must be changed first\", \"error\": true, \"passwordChangeRequired\": true }");
+    return;
+  }
   String *jsonResponse = new String();
 
   Serial.printf("Handling JSON action %s\n", webAction.c_str());

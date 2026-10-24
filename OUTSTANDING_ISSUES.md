@@ -86,7 +86,14 @@ This can cause intermittent crashes, especially when a sensor is renamed while i
 
 In the `/`, `/reboot.html` and `/reboot.js` routes (`src/main.cpp:660-690`), `requestAuthentication()` is not followed by `return`. The code goes straight on to `request->send(SPIFFS, …)`, so each request gets two responses. The page may end up being served without authentication. The API data itself is still protected, because `jsonApiHandler` returns correctly.
 
-### 7. The device is insecure by default
+### 7. ✅ The device is insecure by default
+> **Fixed (forced password change):** while the admin password is still the factory default, the device is locked to changing it.
+> - **API:** `/json-api` refuses every action except `config` and `save-admin` with a 403 (`passwordChangeRequired: true`). `save-admin` rejects any request that doesn't set a new password.
+> - **Web UI:** the page opens on the Admin tab with a notice. The other tabs and the configuration-reset buttons are disabled, and the password fields are mandatory. After any password change, the page reloads so the browser asks for the new credentials.
+> - **"Default" means** the stored password equals `__DEF_ADMIN_PASS`. A factory reset therefore locks the UI again.
+>
+> **Deliberately unchanged:** the setup AP is still open by default, and SNMP still defaults to `public`. Anyone in Wi-Fi range can still reach the login page.
+
 The device starts as an **open** Wi-Fi AP (empty WPA key), with web login `admin`/`admin` over plain HTTP and SNMP community `public`. Anyone within Wi-Fi range can reconfigure it. Suggested fixes:
 - Generate a WPA key from the MAC address or efuse, or print one on the label.
 - Force a password change on first login.
@@ -120,6 +127,8 @@ AP mode has a related problem. `WiFi.config()` sets the station interface, not t
 - **Sensor names**: not validated at all. This also enables the XSS issue in item 20.
 
 #### 12. Validation limits differ between the UI and the firmware
+> **Partly fixed with item 7:** the UI now requires 8 characters for the admin password, which matches the firmware. The other mismatches remain, and the UI still doesn't show the server's `errorMessage`.
+
 
 | Field | UI | Firmware |
 |---|---|---|
