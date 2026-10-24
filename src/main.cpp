@@ -249,7 +249,7 @@ void updateSensorData()
 
 void apiReboot(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
   serializeJson(jsonDoc, *responseString);
@@ -258,7 +258,7 @@ void apiReboot(String *responseString, JsonObject *jsonRequest)
 
 void apiSensorData(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
   for (int i = 0; i < countSensors; i++)
@@ -275,7 +275,7 @@ void apiSensorData(String *responseString, JsonObject *jsonRequest)
 
 void apiSystemStats(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
 
@@ -334,7 +334,7 @@ void apiSystemStats(String *responseString, JsonObject *jsonRequest)
   serializeJson(jsonDoc, *responseString);
 }
 
-void apiGetConfiguration(DynamicJsonDocument *jsonDoc, bool network, bool snmp, bool admin)
+void apiGetConfiguration(JsonDocument *jsonDoc, bool network, bool snmp, bool admin)
 {
   (*jsonDoc)["error"] = false;
   (*jsonDoc)["errorMessage"] = "Success";
@@ -364,7 +364,7 @@ void apiGetConfiguration(DynamicJsonDocument *jsonDoc, bool network, bool snmp, 
 void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
 {
 
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
 
@@ -407,7 +407,7 @@ void apiSaveAdminConfiguration(String *responseString, JsonObject *jsonRequest)
 
 void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
 
@@ -470,7 +470,7 @@ void apiSaveNetworkConfiguration(String *responseString, JsonObject *jsonRequest
 
 void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
 
@@ -523,7 +523,7 @@ void apiSaveSnmpConfiguration(String *responseString, JsonObject *jsonRequest)
 
 void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
 
@@ -575,7 +575,7 @@ void apiSaveThermalSensorConfiguration(String *responseString, JsonObject *jsonR
 
 void apiFactoryReset(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
   resetToDefaults(false);
@@ -585,7 +585,7 @@ void apiFactoryReset(String *responseString, JsonObject *jsonRequest)
 
 void apiClearSensorConfiguration(String *responseString, JsonObject *jsonRequest)
 {
-  DynamicJsonDocument jsonDoc(2048);
+  JsonDocument jsonDoc;
   jsonDoc["error"] = false;
   jsonDoc["errorMessage"] = "Success";
   clearSnmpMap();
@@ -633,7 +633,7 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
   else if (webAction == "config")
   {
     Serial.println("Processing Get Config Request");
-    DynamicJsonDocument jsonDoc(2048);
+    JsonDocument jsonDoc;
     apiGetConfiguration(&jsonDoc, true, true, true);
     serializeJson(jsonDoc, *jsonResponse);
   }
@@ -670,7 +670,7 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
   else
   {
     Serial.println("Unknown action");
-    DynamicJsonDocument jsonDoc(2048);
+    JsonDocument jsonDoc;
     jsonDoc["error"] = true;
     jsonDoc["errorMessage"] = "webAction not implemented";
     serializeJson(jsonDoc, *jsonResponse);

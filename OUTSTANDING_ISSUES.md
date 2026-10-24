@@ -2,12 +2,7 @@
 
 Review of the codebase as of commit `a8375cf` (2026-10-24). Items marked ✅ have since been fixed. Each was fixed in its own commit, and the description of the fix is quoted under the item.
 
-**Build note (2026-10-24):** the repo does **not** build as committed. The unpinned `platform = espressif32` now resolves to 8.0.0 (Arduino-ESP32 v3), and `lib_extra_dirs = /lib` pulls in Linux system headers (see item 19). The fixes were compiled against a scratch copy that changes the following:
-- `platform = espressif32 @ 6.9.0` (Arduino 2.0.17)
-- ArduinoJson 7.4.3
-- ESPAsyncWebServer from git (ESP32Async 3.6.0) with `ESP32Async/AsyncTCP @ 3.5.0`
-- `lib_extra_dirs` removed
-- extra `-I` paths for `WiFi` and `ArduinoJson`, which work around a library-finder (LDF) problem
+**Build status:** the repo builds as committed against Arduino-ESP32 v3 (3.3.12), with every dependency pinned (see item 19). Items 1–5 were first compiled against Arduino 2.0.17 in a scratch copy, and then again as part of the v3 build.
 
 None of the fixes has been tested on hardware.
 
@@ -153,6 +148,8 @@ It is registered as an OctetString (`src/snmp.cpp:57`). It should be an OBJECT I
 Each of these is only safe if the library copies the strings. Confirm against SNMP_Agent 2.1.
 
 #### 16. Ethernet pin definitions are not used
+> **Update (v3 migration):** on Arduino-ESP32 v3, the no-argument `ETH.begin()` takes `ETH_PHY_TYPE`, `ETH_PHY_ADDR`, `ETH_PHY_MDC`, `ETH_PHY_MDIO`, `ETH_PHY_POWER` and `ETH_CLK_MODE` from the board variant. The `esp32-poe` variant defines all of them correctly. It also selects GPIO0 for the clock when PSRAM is enabled. `ethsettings.h` is still redundant, and WT32-ETH01 still needs its own environment.
+
 `include/ethsettings.h` is included **after** `<ETH.h>`, so `ETH.begin()` uses the board variant's defaults. It also uses `ETH_TYPE` where the library expects `ETH_PHY_TYPE`. This works on `esp32-poe` only because that board variant has the correct pins.
 
 The README also promises WT32-ETH01 support, but there is no environment or pin set for it. **Fix:** add a `[env:wt32-eth01]` and pass the PHY settings to `ETH.begin()` explicitly.
@@ -163,7 +160,24 @@ The README also promises WT32-ETH01 support, but there is no environment or pin 
 #### 18. The reset button reboots during normal operation
 Pressing the button for 1 s at runtime reboots the device (`src/main.cpp:866-875`). This is undocumented, and an accidental press in a rack will drop monitoring.
 
-#### 19. Dependencies are not pinned
+#### 19. ✅ Dependencies are not pinned
+> **Fixed:** the project now targets Arduino-ESP32 v3, and every dependency is pinned in `platformio.ini`:
+> - `espressif32 @ 8.0.0` (Arduino-ESP32 3.3.12). This is the first PlatformIO platform release with v3; 7.1.3 still ships 2.0.17.
+> - `esp32async/ESPAsyncWebServer @ 3.12.1` and `esp32async/AsyncTCP @ 3.5.0`. These are the maintained forks and replace the unmaintained `me-no-dev` git dependency.
+> - `ArduinoJson @ 7.4.3`, `SNMP_Agent @ 2.1.0`, `OneWire @ 2.3.8`, `DallasTemperature @ 3.11.0`.
+>
+> Other changes:
+> - `lib_extra_dirs = /lib` has been removed. It pulled Linux system headers into the build.
+> - `lib_ldf_mode` is now `chain`. Under `deep+`, the library finder missed the `SPI` and `Network` libraries that v3 requires.
+> - `DynamicJsonDocument` has been replaced with `JsonDocument`.
+> - **Partition table:** this is now `huge_app.csv` (3 MB app, 896 KB SPIFFS, no OTA slot). The v3 image is about 1.5 MB and no longer fits the 1.25 MB app partition in `default.csv`. `min_spiffs.csv` keeps OTA but has only 128 KB of SPIFFS, which is too small for the ~500 KB web UI.
+>   - **Existing boards:** NVS keeps its offset, so saved settings survive. SPIFFS moves, so run `pio run -t uploadfs` again after flashing.
+>
+> The v3 runtime paths have been checked against the framework source, but not yet on hardware:
+> - `ETH.begin()` with no arguments takes the LAN8720 pins and clock from the `esp32-poe` variant.
+> - `ETH.config()` is called after `begin()`, as v3 requires.
+> - The JSON API response shapes are unchanged under ArduinoJson 7 (checked with a host-side test).
+
 - `espressif32` has no version. Arduino-ESP32 v3 changed the `ETH.begin()` signature and the event API.
 - `me-no-dev/ESPAsyncWebServer` is unmaintained and taken from git HEAD. Consider `mathieucarbou/ESPAsyncWebServer` or `ESP32Async`.
 - `ArduinoJson` is unpinned. v7 deprecates `DynamicJsonDocument`.
@@ -210,3 +224,4 @@ A single failed status poll clears the interval for good (`data/sensorNetPro.js:
 - **KiCad hardware:** the project was created in a8375cf, but the schematic and PCB are empty.
 - **README status:** still says "Initial commit … NOT YET complete. There is some seriously broken code in here" (2023-Oct-10). Update it once the critical items above are fixed.
 - **No firmware update path:** there is no OTA update (ArduinoOTA or a web upload). A device in a rack has to be removed to update it.
+  - `huge_app.csv` has no second app slot (see item 19). Adding OTA will need either a custom partition table or smaller web assets. Two ~1.6 MB app slots leave about 640 KB for SPIFFS. Gzipping the UI would shrink it from ~500 KB, and ESPAsyncWebServer serves `.gz` files automatically.
