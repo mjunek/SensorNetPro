@@ -194,6 +194,16 @@ function updateSystemInfo() {
             responseData.rssi
             : "Not connected to AP"
         );
+        if (responseData.wifiFallbackAp) {
+          $("#wifi_status_text").text(
+            $("#wifi_status_text").text() +
+            " | Fallback AP: " +
+            responseData.wifiFallbackSsid +
+            " (" +
+            responseData.wifiFallbackIp +
+            ")"
+          );
+        }
       }
 
       if (responseData.wifiStatus && responseData.wifiEnabled) {

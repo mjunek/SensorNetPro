@@ -36,6 +36,9 @@ int snmpTemperature[__MAX_SENSOR_COUNT], snmpSensorStatus[__MAX_SENSOR_COUNT], c
 bool eth_connected, dhcp_on, ap_on, wifi_on, isConfigured, resetNeeded, wifiConnected;
 bool statusLed = false;
 bool settingsRebootNeeded = false;
+bool fallbackApActive = false;
+char fallbackSsid[__PREF_SSID_LEN];
+uint32_t lastWifiRetry = 0;
 
 char *sensorAddress[__MAX_SENSOR_COUNT], *sensorName[__MAX_SENSOR_COUNT];
 char *ch_httpAdminUser, *ch_httpAdminPass, *ch_systemHostname, *ch_wifiSSID, *ch_wpaPsk, *ch_snmpCommunity, *ch_snmpSysName, *ch_snmpLocation, *ch_snmpSysContact;
@@ -210,12 +213,14 @@ void WiFiEvent(WiFiEvent_t event)
 
   case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
     Serial.println("Wifi AP: Client Disassociated");
-    wifiConnected = false;
+    if (ap_on)
+      wifiConnected = false;
     break;
 
   case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
     Serial.println("Wifi AP: Client Assigned IP");
-    wifiConnected = true;
+    if (ap_on)
+      wifiConnected = true;
     break;
 
   default:
@@ -336,6 +341,12 @@ void apiSystemStats(String *responseString, JsonObject *jsonRequest)
   jsonDoc["dhcpEnabled"] = dhcp_on;
   jsonDoc["wifiApMode"] = ap_on;
   jsonDoc["etherSpeed"] = etherSpeed;
+  jsonDoc["wifiFallbackAp"] = fallbackApActive;
+  if (fallbackApActive)
+  {
+    jsonDoc["wifiFallbackSsid"] = fallbackSsid;
+    jsonDoc["wifiFallbackIp"] = WiFi.softAPIP().toString();
+  }
 
   serializeJson(jsonDoc, *responseString);
 }
@@ -702,6 +713,19 @@ void jsonApiHandler(AsyncWebServerRequest *request, JsonVariant &json)
   delete (jsonResponse);
 }
 
+// Station mode couldn't connect and there's no Ethernet: bring up an open setup AP
+// alongside the station so the device can still be reached and reconfigured.
+// The station keeps retrying in loop(); the AP stays up until the next reboot.
+void startFallbackAp()
+{
+  uint64_t mac = ESP.getEfuseMac();
+  snprintf(fallbackSsid, sizeof(fallbackSsid), "%s-%02X%02X", __DEF_SSID, (uint8_t)(mac >> 32), (uint8_t)(mac >> 40));
+  Serial.printf("Cannot connect to WiFi and no Ethernet. Starting fallback AP (SSID: %s)\n", fallbackSsid);
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(fallbackSsid);
+  fallbackApActive = true;
+}
+
 void initPortal()
 {
   Serial.println("Initialising web portal - setting up routing");
@@ -843,11 +867,7 @@ void setup()
   }
   if (wifi_on && !ap_on && WiFi.status() != WL_CONNECTED && !eth_connected)
   {
-    Serial.println("Still cannot connect. Rebooting");
-    digitalWrite(ERROR_LED, 1);
-    digitalWrite(STATUS_LED, 0);
-    delay(3000);
-    ESP.restart();
+    startFallbackAp();
   }
 
   uptime = 0;
@@ -910,8 +930,10 @@ void loop()
     updateSensorData();
     prevPoll = uptime;
 
-    if (wifi_on && !ap_on && !settingsRebootNeeded && (WiFi.status() != WL_CONNECTED))
+    if (wifi_on && !ap_on && !settingsRebootNeeded && (WiFi.status() != WL_CONNECTED) &&
+        (!fallbackApActive || lastWifiRetry + (FALLBACK_RETRY_TIME * 100) <= uptime))
     {
+      lastWifiRetry = uptime;
       Serial.println("Reconnecting to WiFi...");
       WiFi.disconnect();
       WiFi.reconnect();

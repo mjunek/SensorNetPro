@@ -109,7 +109,12 @@ These are printed in clear text:
 
 Mask these values or remove the logging.
 
-### 9. A Wi-Fi station failure puts the device into a reboot loop
+### 9. ✅ A Wi-Fi station failure puts the device into a reboot loop
+> **Fixed:** the device no longer reboots. If station mode can't connect within the 60 s boot wait and Ethernet isn't up, `startFallbackAp()` switches to AP+STA and brings up an open setup AP named `SensorNetPro-XXXX` (the last two MAC bytes) on 192.168.4.1. The station connection keeps retrying in `loop()`.
+> - **Retry rate:** while the fallback AP is up, retries happen every `FALLBACK_RETRY_TIME` (60 s) instead of every sensor poll, because each retry scan briefly drops AP clients.
+> - **AP lifetime:** the AP stays up until the next reboot.
+> - **Status:** the status page shows the fallback SSID and IP. AP client events no longer mark the Wi-Fi link as connected in station mode.
+
 With Wi-Fi in station mode and Ethernet not up within 60 s, the device reboots every minute (`src/main.cpp:787-799`). It can never be reached to fix the configuration. **Fix:** fall back to AP mode, or keep running without Wi-Fi.
 
 ### 10. Static IP is applied to both interfaces
