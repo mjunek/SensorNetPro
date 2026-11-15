@@ -43,6 +43,16 @@ snmpwalk -v2c -c public -M +./mibs -m +SENSORNETPRO-MIB <device> SENSORNETPRO-MI
 
 The device's sysObjectID is ```1.3.6.1.4.1.53165.0.1``` (```sensorNetProDevice```).
 
+### OID allocation ###
+Private Enterprise Number 53165 is allocated by the `mrlp-infra` repository (ADR 0036). It delegates two sub-identifiers to this project, and this project manages everything inside them (the master record is `mibs/SENSORNETPRO-MIB.txt`):
+
+| Arc | Use |
+|---|---|
+| ```1.3.6.1.4.1.53165.0``` | sysObjectID values (```.0.1``` is ```sensorNetProDevice```) |
+| ```1.3.6.1.4.1.53165.1``` | SensorNetPro MIB: ```.1.1``` thermal table, ```.1.2``` to ```.1.99``` reserved for further sensor types, ```.1.100``` conformance |
+
+Anything outside these two arcs, including ```.2``` to ```.99```, must be allocated in ADR 0036 first. Numbers are never reused.
+
 ## License ##
 The project is licensed under the terms of the General Public License v3 as detailed in the LICENSE file
 
